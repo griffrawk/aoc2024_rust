@@ -64,25 +64,25 @@ mod tests {
 
     #[test]
     fn test_part_one_test() {
-        let result = part_one("src/day_01/day01_test.txt");
+        let result = part_one("src/day_02/day02_test.txt");
         assert_eq!(result, 142);
     }
     
     #[test]
     fn test_part_one_data() {
-        let result = part_one("src/day_01/day01_data.txt");
+        let result = part_one("src/day_02/day02_data.txt");
         assert_eq!(result, 54877);
     }
 
     #[test]
     fn test_part_two() {
-        let result = part_two("src/day_01/day01_test_part2.txt");
+        let result = part_two("src/day_02/day02_test_part2.txt");
         assert_eq!(result, 281);
     }
     
     #[test]
     fn test_part_two_data() {
-        let result = part_two("src/day_01/day01_data.txt");
+        let result = part_two("src/day_02/day02_data.txt");
         assert_eq!(result, 54100);
     }
 }
