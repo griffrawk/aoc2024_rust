@@ -32,16 +32,14 @@ fn part_two(file: &str) -> u32 {
 
     for line in contents.lines() {
         let mut a_copy = String::from(line);
-        for i in 0..=9 {
-            // Replace a number in words into a worddigitword eg 'eight' becomes 'eight8eight'
-            // This avoids clobbering occurrences where words overlap by a letter
-            // eg. 'twone' -> 'two2twone1one'. Thus the filter section finds both numeric digits properly.
-            
-            // using the concatenation operator with lots of casting (must be String + &str + &str)
-            // let replacement = numbers[i].to_string() + &i.to_string() + &numbers[i];
-            // or, more straightforwardly:
-            let replacement = format!("{}{}{}",numbers[i], i, numbers[i]);
-            a_copy = a_copy.replace(numbers[i], &replacement);
+        // Replace a number in words into a worddigitword eg 'eight' becomes 'eight8eight'
+        // This avoids clobbering occurrences where words overlap by a letter, so doesn't matter
+        // which number comes first.
+        // eg. 'twone' -> 'two2twone1one'. Thus the filter section finds both numeric digits properly,
+        // even though 'one' is modified before 'two'.
+        for (i, number) in numbers.iter().enumerate() {
+            let replacement = format!("{}{}{}", number, i, number);
+            a_copy = a_copy.replace(number, &replacement);
         }
         println!("{} {}", line, a_copy);
 
