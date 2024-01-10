@@ -1,62 +1,71 @@
 use std::collections::HashMap;
 use itertools::Itertools;
 use std::fs;
+use std::cmp;
 
 #[allow(dead_code)]
-pub fn part_one(file: &str) -> u32 {
-    let mut sum_up = 0;
+pub fn part_one_two(file: &str) -> (u32, u32) {
+    let mut sum_up: u32 = 0;
+    let mut maxima: u32 = 0;
     let contents = fs::read_to_string(file).expect("Can't read the file");
     for line in contents.lines() {
+        // The parser:
+        // line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
         let v: Vec<&str> = line.split(':').collect();
+        // v = ["Game 1"," 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"]
         let game = v[0].split_whitespace()
-            .collect::<Vec<_>>()[1]
+            .collect::<Vec<&str>>()[1]
             .parse::<u32>().unwrap();
+        // game = 1
         let hands = v[1];
-        if valid_game(hands) {
+        // hands = " 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
+        if valid_game(hands, &mut maxima) {
             sum_up += game;
         }
     }
-    println!("{}", sum_up);
-    sum_up
+    println!("{} {}", sum_up, maxima);
+    (sum_up, maxima)
 }
 
-fn valid_game(hands: &str) -> bool {
+fn valid_game(hands: &str, maxima: &mut u32) -> bool {
+    // hands = " 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
     let limits = HashMap::from([("red", 12), ("green", 13), ("blue", 14)]);
+    let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
+    let mut is_valid_game = true;
     for hand in hands.split(';') {
+        // hand = " 3 blue, 4 red"
         for cube in hand.split(',') {
+            // cube = " 3 blue"
             if let Some((count , colour)) = cube.split_whitespace().collect_tuple() {
+                // count = "3", colour = "blue"
                 if count.parse::<u32>().unwrap() > limits[colour] {
-                    return false
+                    is_valid_game = false;
                 }
+                max_per_colour
+                    .insert(colour, cmp::max(max_per_colour[colour], count
+                        .parse::<u32>().unwrap()));
             } else {
                 panic!("Expected 2 elements in cube")
             }
         }
     }
-    true
-}
-
-
-#[allow(dead_code)]
-fn part_two(file: &str) -> u32 {
-    let sum_up = 0;
-    println!("{}", sum_up);
-    sum_up
+    *maxima += max_per_colour.values().product::<u32>();
+    is_valid_game
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::day_02::day02::{part_one, part_two};
+    use crate::day_02::day02::part_one_two;
 
     #[test]
-    fn test_part_one_test() {
-        let result = part_one("src/day_02/day02_test.txt");
-        assert_eq!(result, 8);
+    fn test_part_one_two_test() {
+        let result = part_one_two("src/day_02/day02_test.txt");
+        assert_eq!(result, (8, 2286));
     }
 
     #[test]
-    fn test_part_one_data() {
-        let result = part_one("src/day_02/day02_data.txt");
-        assert_eq!(result, 2105);
+    fn test_part_one_two_data() {
+        let result = part_one_two("src/day_02/day02_data.txt");
+        assert_eq!(result, (2105, 72422));
     }
 }
