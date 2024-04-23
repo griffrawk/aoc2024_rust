@@ -67,7 +67,7 @@ fn parse_games(input: &str) -> IResult<&str, Vec<Game>> {
     Ok((input, games))
 }
 
-pub fn process(input: &str) -> u32 {
+pub fn part_one(input: &str) -> u32 {
     let map = BTreeMap::from([("red", 12), ("green", 13), ("blue", 14)]);
     let games = parse_games(input).expect("should parse");
 
@@ -84,11 +84,11 @@ mod tests {
 
     #[test]
     fn test_part_one_test() {
-        assert_eq!(8, process(include_str!("day02_test.txt")));
+        assert_eq!(8, part_one(include_str!("day02_test.txt")));
     }
 
     #[test]
     fn test_part_one_data() {
-        assert_eq!(2105, process(include_str!("day02_data.txt")));
+        assert_eq!(2105, part_one(include_str!("day02_data.txt")));
     }
 }
