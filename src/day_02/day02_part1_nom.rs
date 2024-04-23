@@ -12,6 +12,8 @@ use nom::{
     IResult,
 };
 
+// oh lifetimes.. because were using &str in structs
+
 #[derive(Debug)]
 struct Cube<'a> {
     color: &'a str,
@@ -25,6 +27,7 @@ struct Game<'a> {
 }
 
 impl<'a> Game<'a> {
+    // check this cube's amount is valid against the rules in map, return Option(id) if true
     fn valid_for_cube_set(&self, map: &BTreeMap<&str, u32>) -> Option<u32> {
         self.rounds
             .iter()
@@ -70,6 +73,8 @@ fn parse_games(input: &str) -> IResult<&str, Vec<Game>> {
 pub fn part_one(input: &str) -> u32 {
     let map = BTreeMap::from([("red", 12), ("green", 13), ("blue", 14)]);
     let games = parse_games(input).expect("should parse");
+
+    // dbg!("{}", &games);
 
     games
         .1
