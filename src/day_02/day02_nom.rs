@@ -1,5 +1,4 @@
 // mostly copied from Chris Biscardi AOC2023, to see how it would be done with nom
-// however there's a lot of other stuff in his code to sort out mentally too!
 // https://github.com/ChristopherBiscardi/advent-of-code/tree/main/2023/rust/day-02-parsing
 
 // part 2 is all my own work!
@@ -22,8 +21,8 @@ use nom::{
 
 #[derive(Debug)]
 struct Cube<'a> {
-    color: &'a str,
     amount: u32,
+    colour: &'a str,
 }
 
 #[derive(Debug)]
@@ -33,31 +32,34 @@ struct Game<'a> {
 }
 
 impl<'a> Game<'a> {
-    // check this game's cubes amounts are valid against the rules in map, return Option(id) if true
+    // check this game's cubes amounts are valid against the rules in map, return Some(id) if true
     fn valid_for_cube_set(&self, map: &BTreeMap<&str, u32>) -> Option<u32> {
         self.rounds
             .iter()
+            // uses any, prob some reason CB used any... any & all both short-circuit, so
+            // maybe so it fails as soon as possible, rather than wait for all to be checked
             .any(|round| {
                 round.iter().any(|shown_cube| {
-                    shown_cube.amount > *map.get(shown_cube.color).expect("a valid cube")
+                    shown_cube.amount > *map.get(shown_cube.colour).expect("a valid cube")
                 })
             })
             .not()
             .then_some(
+                // return Some(id) if amount is <= limit, else None
                 self.id
                     .parse::<u32>()
                     .expect("game id should be a parsable u32"),
             )
     }
 
-    // minimum number of cubes of each color to play this game
+    // minimum number of cubes of each colour to play this game
     fn minimum_cube_set(&self) -> u32 {
         let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
         self.rounds.iter().for_each(|round| {
             round.iter().for_each(|cube| {
                 max_per_colour.insert(
-                    cube.color,
-                    cmp::max(max_per_colour[cube.color], cube.amount),
+                    cube.colour,
+                    cmp::max(max_per_colour[cube.colour], cube.amount),
                 );
             });
         });
@@ -67,8 +69,8 @@ impl<'a> Game<'a> {
 
 // 4 red
 fn cube(input: &str) -> IResult<&str, Cube> {
-    let (input, (amount, color)) = separated_pair(complete::u32, tag(" "), alpha1)(input)?;
-    Ok((input, Cube { color, amount }))
+    let (input, (amount, colour)) = separated_pair(complete::u32, tag(" "), alpha1)(input)?;
+    Ok((input, Cube { amount, colour }))
 }
 
 // 3 blue, 4 red
