@@ -50,8 +50,9 @@ impl<'a> Game<'a> {
             )
     }
 
+    // minimum number of cubes of each color to play this game
     fn minimum_cube_set(&self) -> u32 {
-        let mut maxima = 0;
+        let mut minimum = 0;
         let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
         self.rounds.iter().for_each(|round| {
             round.iter().for_each(|cube| {
@@ -61,8 +62,8 @@ impl<'a> Game<'a> {
                 );
             });
         });
-        maxima += max_per_colour.values().product::<u32>();
-        maxima
+        minimum += max_per_colour.values().product::<u32>();
+        minimum
     }
 }
 
