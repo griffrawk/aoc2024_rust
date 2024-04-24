@@ -55,13 +55,11 @@ impl<'a> Game<'a> {
     // minimum number of cubes of each colour to play this game
     fn minimum_cube_set(&self) -> u32 {
         let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
-        self.rounds.iter().for_each(|round| {
-            round.iter().for_each(|cube| {
-                max_per_colour.insert(
-                    cube.colour,
-                    cmp::max(max_per_colour[cube.colour], cube.amount),
-                );
-            });
+        self.rounds.iter().flatten().for_each(|cube| {
+            max_per_colour.insert(
+                cube.colour,
+                cmp::max(max_per_colour[cube.colour], cube.amount),
+            );
         });
         max_per_colour.values().product::<u32>()
     }
@@ -106,11 +104,7 @@ fn part_one(input: &str) -> u32 {
 fn part_two(input: &str) -> u32 {
     let games = parse_games(input).expect("should parse");
 
-    games
-        .1
-        .iter()
-        .map(|game| game.minimum_cube_set())
-        .sum()
+    games.1.iter().map(|game| game.minimum_cube_set()).sum()
 }
 
 #[cfg(test)]
@@ -126,7 +120,7 @@ mod tests {
     fn test_part_two_test() {
         assert_eq!(2286, part_two(include_str!("day02_test.txt")));
     }
-    
+
     #[test]
     fn test_part_one_data() {
         assert_eq!(2105, part_one(include_str!("day02_data.txt")));
