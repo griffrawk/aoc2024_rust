@@ -1,12 +1,12 @@
-// mostly copied from Chris Biscardi AOC2023, to see how it would be done with nom
+// Mostly copied from Chris Biscardi AOC2023, to see how it would be done with nom
 // https://github.com/ChristopherBiscardi/advent-of-code/tree/main/2023/rust/day-02-parsing
 
-// part 2 is all my own work!
+// Part 2 is all my own work, but remarkably similar!
 
 use std::{
     cmp,
-    collections::{BTreeMap, HashMap},
-    ops::Not,
+    collections::BTreeMap,
+    // ops::Not,
 };
 
 use nom::{
@@ -17,7 +17,7 @@ use nom::{
     IResult,
 };
 
-// oh lifetimes.. because were using &str in structs
+// Oh lifetimes.. because were using &str in structs
 
 #[derive(Debug)]
 struct Cube<'a> {
@@ -36,16 +36,21 @@ impl<'a> Game<'a> {
     fn valid_for_cube_set(&self, map: &BTreeMap<&str, u32>) -> Option<u32> {
         self.rounds
             .iter()
-            // uses any, prob some reason CB used any... any & all both short-circuit, so
+            // CB github version uses any, prob some reason CB used any... any & all both short-circuit, so
             // maybe so it fails as soon as possible, rather than wait for all to be checked
-            .any(|round| {
-                round.iter().any(|shown_cube| {
-                    shown_cube.amount > *map.get(shown_cube.colour).expect("a valid cube")
+            // Actually he first writes as all, then it gets changed at some point
+            // The video leaves it with all, and doesn't cover the change
+            // .any(|round| {
+            .all(|round| {
+                // round.iter().any(|shown_cube| {
+                round.iter().all(|shown_cube| {
+                    // shown_cube.amount > *map.get(shown_cube.colour).expect("a valid cube")
+                    shown_cube.amount <= *map.get(shown_cube.colour).expect("a valid cube")
                 })
             })
-            .not()
+            // .not()
             .then_some(
-                // return Some(id) if amount is <= limit, else None
+                // Return Some(id) if amount is <= limit, else None
                 self.id
                     .parse::<u32>()
                     .expect("game id should be a parsable u32"),
@@ -54,7 +59,9 @@ impl<'a> Game<'a> {
 
     // minimum number of cubes of each colour to play this game
     fn minimum_cube_set(&self) -> u32 {
-        let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
+        let mut max_per_colour = BTreeMap::from([("red", 0), ("green", 0), ("blue", 0)]);
+        // CB uses fold on the map
+        // I'm not interested in individual rounds, so flatten them
         self.rounds.iter().flatten().for_each(|cube| {
             max_per_colour.insert(
                 cube.colour,
