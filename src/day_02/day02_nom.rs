@@ -2,7 +2,13 @@
 // however there's a lot of other stuff in his code to sort out mentally too!
 // https://github.com/ChristopherBiscardi/advent-of-code/tree/main/2023/rust/day-02-parsing
 
-use std::{collections::BTreeMap, ops::Not};
+// part 2 is all my own work!
+
+use std::{
+    cmp,
+    collections::{BTreeMap, HashMap},
+    ops::Not,
+};
 
 use nom::{
     bytes::complete::tag,
@@ -27,7 +33,7 @@ struct Game<'a> {
 }
 
 impl<'a> Game<'a> {
-    // check this cube's amount is valid against the rules in map, return Option(id) if true
+    // check this game's cubes amounts are valid against the rules in map, return Option(id) if true
     fn valid_for_cube_set(&self, map: &BTreeMap<&str, u32>) -> Option<u32> {
         self.rounds
             .iter()
@@ -42,6 +48,21 @@ impl<'a> Game<'a> {
                     .parse::<u32>()
                     .expect("game id should be a parsable u32"),
             )
+    }
+
+    fn minimum_cube_set(&self) -> u32 {
+        let mut maxima = 0;
+        let mut max_per_colour = HashMap::from([("red", 0), ("green", 0), ("blue", 0)]);
+        self.rounds.iter().for_each(|round| {
+            round.iter().for_each(|cube| {
+                max_per_colour.insert(
+                    cube.color,
+                    cmp::max(max_per_colour[cube.color], cube.amount),
+                );
+            });
+        });
+        maxima += max_per_colour.values().product::<u32>();
+        maxima
     }
 }
 
@@ -70,17 +91,25 @@ fn parse_games(input: &str) -> IResult<&str, Vec<Game>> {
     Ok((input, games))
 }
 
-pub fn part_one(input: &str) -> u32 {
+fn part_one(input: &str) -> u32 {
     let map = BTreeMap::from([("red", 12), ("green", 13), ("blue", 14)]);
     let games = parse_games(input).expect("should parse");
-
-    // dbg!("{}", &games);
 
     games
         .1
         .iter()
         .filter_map(|game| game.valid_for_cube_set(&map))
-        .sum::<u32>()
+        .sum()
+}
+
+fn part_two(input: &str) -> u32 {
+    let games = parse_games(input).expect("should parse");
+
+    games
+        .1
+        .iter()
+        .map(|game| game.minimum_cube_set())
+        .sum()
 }
 
 #[cfg(test)]
@@ -93,7 +122,17 @@ mod tests {
     }
 
     #[test]
+    fn test_part_two_test() {
+        assert_eq!(2286, part_two(include_str!("day02_test.txt")));
+    }
+    
+    #[test]
     fn test_part_one_data() {
         assert_eq!(2105, part_one(include_str!("day02_data.txt")));
+    }
+
+    #[test]
+    fn test_part_two_data() {
+        assert_eq!(72422, part_two(include_str!("day02_data.txt")));
     }
 }
