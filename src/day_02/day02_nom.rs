@@ -3,6 +3,12 @@
 
 // Part 2 is all my own work, but remarkably similar!
 
+// Note, I've muddied the waters somewhat with unnecessary additions of
+// nom_locate, when strictly for the purposes of day02. But it was useful code to 
+// play with and I want to try and use it for day03 in more detail.
+// Rather than bin it I'll leave it in here, even though it's not really serving 
+// any purpose for day02
+
 use std::{
     cmp,
     collections::BTreeMap,
@@ -14,8 +20,13 @@ use nom::{
     character::complete::{self, alpha1, digit1, line_ending},
     multi::separated_list1,
     sequence::{preceded, separated_pair},
-    IResult,
+    IResult, InputIter,
 };
+
+use nom_locate::{position, LocatedSpan};
+
+type Span<'a> = LocatedSpan<&'a str>;
+
 
 // Oh lifetimes.. because were using &str in structs
 
@@ -73,42 +84,58 @@ impl<'a> Game<'a> {
 }
 
 // 4 red
-fn cube(input: &str) -> IResult<&str, Cube> {
+fn cube(input: Span) -> IResult<Span, Cube> {
     let (input, (amount, colour)) = separated_pair(complete::u32, tag(" "), alpha1)(input)?;
+    let colour = &colour.fragment();
     Ok((input, Cube { amount, colour }))
 }
 
 // 3 blue, 4 red
-fn round(input: &str) -> IResult<&str, Vec<Cube>> {
+fn round(input: Span) -> IResult<Span, Vec<Cube>> {
     let (input, cubes) = separated_list1(tag(", "), cube)(input)?;
     Ok((input, cubes))
 }
 
 // Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue;
 // 2 green
-fn game(input: &str) -> IResult<&str, Game> {
+fn game(input: Span) -> IResult<Span, Game> {
+    // For day02, the nom_locate stuff is not needed, but left in for future reminders
+
+    // position before we start parsing for "Game ""
+    let pos = position(input)?.1.location_offset();
+    println!("start: {}", pos);
     let (input, id) = preceded(tag("Game "), digit1)(input)?;
+    // We have to use the fragment() of id, as nom_locate somehow mucks up the return type for id
+    let id = id.fragment();
+    // position after id
+    let pos = position(input)?.1.location_offset();
+    println!("id end: {} {}", id, pos);
     let (input, rounds) = preceded(tag(": "), separated_list1(tag("; "), round))(input)?;
+    // position after this game's rounds (eg eol)
+    let pos = position(input)?.1.location_offset();
+    println!("rounds end: {} {}", id, pos);
     Ok((input, Game { rounds, id }))
 }
 
-fn parse_games(input: &str) -> IResult<&str, Vec<Game>> {
+fn parse_games(input: Span) -> IResult<Span, Vec<Game>> {
     let (input, games) = separated_list1(line_ending, game)(input)?;
     Ok((input, games))
 }
 
-fn part_one(input: &str) -> u32 {
+fn part_one(data: &str) -> u32 {
+    let input = Span::new(&data);
     let map = BTreeMap::from([("red", 12), ("green", 13), ("blue", 14)]);
     let games = parse_games(input).expect("should parse");
-
+    
     games
-        .1
-        .iter()
-        .filter_map(|game| game.valid_for_cube_set(&map))
-        .sum()
+    .1
+    .iter()
+    .filter_map(|game| game.valid_for_cube_set(&map))
+    .sum()
 }
 
-fn part_two(input: &str) -> u32 {
+fn part_two(data: &str) -> u32 {
+    let input = Span::new(&data);
     let games = parse_games(input).expect("should parse");
 
     games.1.iter().map(|game| game.minimum_cube_set()).sum()
