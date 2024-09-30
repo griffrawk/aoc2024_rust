@@ -4,9 +4,9 @@
 // Part 2 is all my own work, but remarkably similar!
 
 // Note, I've muddied the waters somewhat with unnecessary additions of
-// nom_locate, when strictly for the purposes of day02. But it was useful code to 
+// nom_locate, when strictly for the purposes of day02. But it was useful code to
 // play with and I want to try and use it for day03 in more detail.
-// Rather than bin it I'll leave it in here, even though it's not really serving 
+// Rather than bin it I'll leave it in here, even though it's not really serving
 // any purpose for day02
 
 use std::{
@@ -27,7 +27,6 @@ use nom_locate::{position, LocatedSpan};
 
 type Span<'a> = LocatedSpan<&'a str>;
 
-
 // Oh lifetimes.. because were using &str in structs
 
 #[derive(Debug)]
@@ -47,7 +46,7 @@ impl<'a> Game<'a> {
     fn valid_for_cube_set(&self, map: &BTreeMap<&str, u32>) -> Option<u32> {
         self.rounds
             .iter()
-            // CB github version uses any, prob some reason CB used any... any & all both short-circuit, so
+            // CB github version uses any, prob some reason CB used any. any & all both short-circuit,
             // maybe so it fails as soon as possible, rather than wait for all to be checked
             // Actually he first writes as all, then it gets changed at some point
             // The video leaves it with all, and doesn't cover the change
@@ -126,12 +125,12 @@ fn part_one(data: &str) -> u32 {
     let input = Span::new(&data);
     let map = BTreeMap::from([("red", 12), ("green", 13), ("blue", 14)]);
     let games = parse_games(input).expect("should parse");
-    
+
     games
-    .1
-    .iter()
-    .filter_map(|game| game.valid_for_cube_set(&map))
-    .sum()
+        .1
+        .iter()
+        .filter_map(|game| game.valid_for_cube_set(&map))
+        .sum()
 }
 
 fn part_two(data: &str) -> u32 {

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use itertools::Itertools;
-use std::fs;
 use std::cmp;
+use std::collections::HashMap;
+use std::fs;
 
 #[allow(dead_code)]
 pub fn part_one_two(file: &str) -> (u32, u32) {
@@ -13,8 +13,7 @@ pub fn part_one_two(file: &str) -> (u32, u32) {
         // line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
         let v: Vec<&str> = line.split(':').collect();
         // v = ["Game 1"," 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"]
-        let game: u32 = v[0].split_whitespace()
-            .collect::<Vec<&str>>()[1]
+        let game: u32 = v[0].split_whitespace().collect::<Vec<&str>>()[1]
             .parse()
             .unwrap_or_default();
 
@@ -47,9 +46,7 @@ fn valid_game(hands: &str, maxima: &mut u32) -> bool {
         // hand = " 3 blue, 4 red"
         for cube in hand.split(',') {
             // cube = " 3 blue"
-            if let Some((c , colour)) = cube
-                                                    .split_whitespace()
-                                                    .collect_tuple() {
+            if let Some((c, colour)) = cube.split_whitespace().collect_tuple() {
                 // count = "3", colour = "blue"
                 let count: u32 = c.parse().unwrap_or_default();
                 // assumption that the colour is valid, panic if not
@@ -68,7 +65,7 @@ fn valid_game(hands: &str, maxima: &mut u32) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_02::day02::{part_one_two};
+    use crate::day_02::day02::part_one_two;
 
     #[test]
     fn test_part_one_two_test() {
