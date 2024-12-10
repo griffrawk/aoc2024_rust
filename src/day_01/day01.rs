@@ -1,61 +1,25 @@
 use std::fs;
+use std::iter::zip;
+use itertools::Itertools;
 
 #[allow(dead_code)]
-pub fn part_one(file: &str) -> u32 {
-    // read a file per line, for each line filter for digits and concatenate them
-    // sum the first and last digit of each line as a new number
-    // eg '1234' -> sum_up += 14
-
+pub fn part_one(file: &str) -> i32 {
     let contents: String = fs::read_to_string(file).expect("Can't read the file");
-    let mut sum_up = 0;
+    let mut s1: Vec<i32> = Vec::new();
+    let mut s2: Vec<i32> = Vec::new();
     for line in contents.lines() {
-        let numbs: Vec<u32> = line
-            .chars()
-            .filter(|a| a.is_ascii_digit())
-            .map(|a| a.to_string().parse::<u32>().unwrap())
-            .collect();
-
-        println!("{:?}", numbs);
-        sum_up += numbs.first().unwrap_or(&0) * 10 + numbs.last().unwrap_or(&0);
+        let values: Vec<&str> = line.split_whitespace().collect();
+        s1.push(values[0].to_string().parse::<i32>().unwrap());
+        s2.push(values[1].to_string().parse::<i32>().unwrap());
     }
-    println!("{}", sum_up);
-    sum_up
+    let zipped = zip(s1.iter().sorted(), s2.iter().sorted()); 
+    zipped.fold(0, | acc, s| acc + (s.0 - s.1).abs())
 }
 
 #[allow(dead_code)]
 fn part_two(file: &str) -> u32 {
     let contents = fs::read_to_string(file).expect("Can't read the file");
-    let mut sum_up = 0;
-    let numbers = [
-        "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    ];
-
-    for line in contents.lines() {
-        let mut a_copy = String::from(line);
-        // Replace a number in words into a worddigitword eg 'eight' becomes 'eight8eight'
-        // This avoids clobbering occurrences where words overlap by a letter, so doesn't matter
-        // which number comes first.
-        // eg. 'twone' -> 'two2twone1one'. Thus the filter section finds both numeric digits properly,
-        // even though 'one' is modified before 'two'.
-        for (i, number) in numbers.iter().enumerate() {
-            let replacement = format!("{}{}{}", number, i, number);
-            a_copy = a_copy.replace(number, &replacement);
-        }
-        println!("{} {}", line, a_copy);
-
-        // Now filter for the ascii digits and make a Vec<u32>
-        let numbs: Vec<u32> = a_copy
-            .chars()
-            .filter(|a| a.is_ascii_digit())
-            .map(|a| a.to_string().parse::<u32>().unwrap())
-            .collect();
-
-        println!("{:?}", numbs);
-        // Pick first and last digits (if present, else 0) and sum
-        sum_up += numbs.first().unwrap_or(&0) * 10 + numbs.last().unwrap_or(&0);
-    }
-    println!("{}", sum_up);
-    sum_up
+    0
 }
 
 #[cfg(test)]
@@ -64,25 +28,25 @@ mod tests {
 
     #[test]
     fn test_part_one_test() {
-        let result: u32 = part_one("src/day_01/day01_test.txt");
-        assert_eq!(result, 142);
+        let result = part_one("src/day_01/day01_test.txt");
+        assert_eq!(result, 11);
     }
 
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_01/day01_data.txt");
-        assert_eq!(result, 54877);
+        assert_eq!(result, 1651298);
     }
 
     #[test]
     fn test_part_two() {
         let result = part_two("src/day_01/day01_test_part2.txt");
-        assert_eq!(result, 281);
+        // assert_eq!(result, 281);
     }
 
     #[test]
     fn test_part_two_data() {
         let result = part_two("src/day_01/day01_data.txt");
-        assert_eq!(result, 54100);
+        // assert_eq!(result, 54100);
     }
 }

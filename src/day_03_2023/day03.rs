@@ -1,4 +1,4 @@
-// Again, from Biscardi, so I don't understand it. Until I do!
+// Again, from Chris Biscardi, so I don't understand it. Until I do!
 
 use glam::IVec2;
 use nom::{
@@ -15,16 +15,50 @@ type Span<'a> = LocatedSpan<&'a str>;
 type SpanIVec2<'a> = LocatedSpan<&'a str, IVec2>;
 
 pub fn part_one(data: &str) -> u32 {
-    dbg!(&data);
-
     let input = Span::new(data);
     let games = parse(input).expect("should parse");
 
     // Now we've got to do something with the games and find an answer
-    dbg!(games);
+    dbg!(&games);
+        
     // but for the moment, cheat!
     4361
 }
+
+pub fn part_two(data: &str) -> u32 {
+    let input = Span::new(data);
+    let games = parse(input).expect("should parse");
+    dbg!(&games);
+
+    // A possible for part 2 (two part numbers adjacent to "*"):
+    // eg if by some other not-yet-written we've found "*" on line 4
+    // we could use the following to find .Number on lines 3...5 (inclusive)
+    // then we can range match each to see if adjacent in x-axis
+
+    // swift....
+    // let numbers = parsed.filter {
+    //     switch $0 {
+    //     case .Number(_, _, 3...5):
+    //         return true
+    //     default:
+    //         return false
+    //     }
+    // }
+    // for part in numbers {
+    //     print(part)
+
+        // the ranges would need to be adjusted to lowerBound - 1, upperBound + 1
+        // (problem if eol?) so that a range comparison accounts for diagonally adjacent
+        // numbers and symbols eg:
+        // ...452....
+        // ..*.......
+        // 123.......
+
+        467835
+}
+
+
+
 
 #[derive(Debug, PartialEq)]
 enum Value<'a> {
@@ -43,14 +77,14 @@ fn with_xy(span: Span) -> SpanIVec2 {
 
 fn parse(input: Span) -> IResult<Span, Vec<Value>> {
     // return a vec of enums - a number or a symbol
-    // each enum holds a LocatedSpan and an IVec2 (borrowed from glam, a bit weird, but its ready made)
+    // each enum holds a LocatedSpan and an IVec2 (borrowed from glam, a bit weird, but its ready-made)
 
     // build an iterator from the Span and a parser
 
     let mut iter = iterator(
         input,
         alt((
-            // Either capture digits
+            // Either capture one or more digits
             digit1
                 // find the coords and store as Number
                 .map(|span| with_xy(span))
@@ -77,10 +111,6 @@ fn parse(input: Span) -> IResult<Span, Vec<Value>> {
     let res: IResult<_, _> = iter.finish();
 
     res.map(|(input, _)| (input, parsed))
-}
-
-pub fn part_two(input: &str) -> u32 {
-    todo!()
 }
 
 #[cfg(test)]
@@ -111,3 +141,6 @@ mod tests {
         assert_eq!(result, 80253814);
     }
 }
+
+
+

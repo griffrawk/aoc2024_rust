@@ -65,17 +65,17 @@ fn valid_game(hands: &str, maxima: &mut u32) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_02::day02::part_one_two;
+    use crate::day_02_2023::day02::part_one_two;
 
     #[test]
     fn test_part_one_two_test() {
-        let result = part_one_two("src/day_02/day02_test.txt");
+        let result = part_one_two("src/day_02_2023/day02_test.txt");
         assert_eq!(result, (8, 2286));
     }
 
     #[test]
     fn test_part_one_two_data() {
-        let result = part_one_two("src/day_02/day02_data.txt");
+        let result = part_one_two("src/day_02_2023/day02_data.txt");
         assert_eq!(result, (2105, 72422));
     }
 }
