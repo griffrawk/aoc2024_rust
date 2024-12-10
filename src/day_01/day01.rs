@@ -1,6 +1,6 @@
+use itertools::Itertools;
 use std::fs;
 use std::iter::zip;
-use itertools::Itertools;
 
 struct Locations {
     s1: Vec<i32>,
@@ -17,10 +17,7 @@ impl Locations {
             s1.push(values[0].parse::<i32>().unwrap());
             s2.push(values[1].parse::<i32>().unwrap());
         }
-        Self {
-            s1,
-            s2,
-        }
+        Self { s1, s2 }
     }
 }
 
@@ -28,17 +25,15 @@ impl Locations {
 pub fn part_one(file: &str) -> i32 {
     let locations = Locations::new(file);
     let zipped = zip(locations.s1.iter().sorted(), locations.s2.iter().sorted());
-    zipped.fold(0, | acc, s| acc + (s.0 - s.1).abs())
+    zipped.fold(0, |acc, s| acc + (s.0 - s.1).abs())
 }
 
 #[allow(dead_code)]
 fn part_two(file: &str) -> i32 {
     let locations = Locations::new(file);
-    let mut tot = 0;
-    for a in locations.s1 {
-        tot += a * locations.s2.iter().filter(|&n| *n == a).count() as i32;
-    }
-    tot
+    locations.s1.iter().fold(0, |acc, s| {
+        acc + s * locations.s2.iter().filter(|&n| *n == *s).count() as i32
+    })
 }
 
 #[cfg(test)]
