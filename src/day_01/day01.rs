@@ -19,6 +19,7 @@ pub fn part_one(file: &str) -> i32 {
 #[allow(dead_code)]
 fn part_two(file: &str) -> u32 {
     let contents = fs::read_to_string(file).expect("Can't read the file");
+
     0
 }
 
