@@ -29,7 +29,7 @@ pub fn part_one(file: &str) -> i32 {
 }
 
 #[allow(dead_code)]
-fn part_two(file: &str) -> i32 {
+pub fn part_two(file: &str) -> i32 {
     let locations = Locations::new(file);
     locations.s1.iter().fold(0, |acc, s| {
         acc + s * locations.s2.iter().filter(|&n| *n == *s).count() as i32
