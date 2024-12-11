@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn test_part_two() {
+    fn test_part_two_test() {
         let result = part_two("src/day_01/day02_test.txt");
         assert_eq!(result, 0);
     }
