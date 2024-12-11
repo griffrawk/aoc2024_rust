@@ -13,9 +13,12 @@ impl Locations {
         let mut s1: Vec<i32> = Vec::new();
         let mut s2: Vec<i32> = Vec::new();
         for line in contents.lines() {
-            let values: Vec<&str> = line.split_whitespace().collect();
-            s1.push(values[0].parse::<i32>().unwrap());
-            s2.push(values[1].parse::<i32>().unwrap());
+            let values: Vec<i32> = line
+                .split_whitespace()
+                .filter_map(|s| s.parse().ok())
+                .collect();
+            s1.push(values[0]);
+            s2.push(values[1]);
         }
         Self { s1, s2 }
     }
