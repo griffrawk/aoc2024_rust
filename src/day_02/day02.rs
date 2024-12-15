@@ -40,7 +40,7 @@ pub fn part_one_original(file: &str) -> i32 {
                 } else {
                     let diff = previous - level;
                     // unsafe report if no diff, or too big
-                    if (diff.abs() == 0) | (diff.abs() > 3) {
+                    if (diff.abs() == 0) || (diff.abs() > 3) {
                         break 'inner;
                     }
                     maxd = max(maxd, diff);
@@ -50,7 +50,7 @@ pub fn part_one_original(file: &str) -> i32 {
             }
             // There can only be increase in one direction, and must be
             // increase in at least one direction. Unsafe report otherwise
-            if ((maxd > 0) & (mind == 0)) | ((mind < 0) & (maxd == 0)) {
+            if maxd > 0 && mind == 0 || mind < 0 && maxd == 0 {
                 safe += 1
             }
         }
@@ -95,12 +95,12 @@ pub fn safe_report(report: Vec<i32>) -> bool {
     let l2 = &report[1 .. report.len()];
     let increasing = zip(l1, l2).any(|a| a.0 < a.1);
     let decreasing = zip(l1, l2).any(|a| a.0 > a.1);
-    if increasing & decreasing {
+    if increasing && decreasing {
         return false
     }
     for (a, b) in zip(l1, l2) {
         let d = (a - b).abs();
-        if (d < 1 ) | (d > 3 ) {
+        if d < 1 || d > 3 {
             return false
         }
     }
