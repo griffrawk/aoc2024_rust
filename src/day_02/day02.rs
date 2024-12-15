@@ -40,7 +40,7 @@ pub fn part_one_original(file: &str) -> i32 {
                 } else {
                     let diff = previous - level;
                     // unsafe report if no diff, or too big
-                    if (diff.abs() == 0) || (diff.abs() > 3) {
+                    if diff.abs() == 0 || diff.abs() > 3 {
                         break 'inner;
                     }
                     maxd = max(maxd, diff);
