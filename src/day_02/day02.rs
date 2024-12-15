@@ -97,11 +97,13 @@ pub fn part_two(file: &str) -> i32 {
 }
 
 pub fn safe_report(report: Vec<i32>) -> bool {
-    // Joost's method
+    // Joost's method, but changed all to any so the bools truly represent
+    // whether any increase or decrease found, rather than having to negate them
+    // when checked.
     let l1 = &report[0..report.len()-1];
     let l2 = &report[1..report.len()];
-    let increasing = !zip(l1, l2).all(|a| a.0 <= a.1);
-    let decreasing = !zip(l1, l2).all(|a| a.0 >= a.1);
+    let increasing = zip(l1, l2).any(|a| a.0 <= a.1);
+    let decreasing = zip(l1, l2).any(|a| a.0 >= a.1);
     if increasing & decreasing { return false }
     for (a, b) in zip(l1, l2) {
         let d = (a - b).abs();
