@@ -1,6 +1,7 @@
 use std::cmp::{max, min};
 use std::fs;
 use colored::Colorize;
+use std::iter::zip;
 
 #[derive(Debug)]
 struct Reports {
@@ -24,7 +25,7 @@ impl Reports {
 }
 
 #[allow(dead_code)]
-pub fn part_one(file: &str) -> i32 {
+pub fn part_one_original(file: &str) -> i32 {
     let reports = Reports::new(file);
     // println!("{:?}", reports);
     let mut safe = 0;
@@ -57,41 +58,60 @@ pub fn part_one(file: &str) -> i32 {
     }
     safe
 }
+
 #[allow(dead_code)]
-pub fn part_two_a(file: &str) -> i32 {
+pub fn part_one(file: &str) -> i32 {
     let reports = Reports::new(file);
-    // println!("{:?}", reports);
     let mut safe = 0;
     for report in reports.reports {
-        let mut first = true;
-        let mut previous = 0;
-        let mut maxd = 0;
-        let mut mind = 0;
-        'inner: for level in report {
-            if first {
-                first = false;
-            } else {
-                let diff = previous - level;
-                // unsafe report if no diff, or too big
-                if (diff.abs() == 0) | (diff.abs() > 3) {
-                    break 'inner;
-                }
-                maxd = max(maxd, diff);
-                mind = min(mind, diff);
-            }
-            previous = level;
-        }
-        // There can only be increase in one direction, and must be
-        // increase in at least one direction. Unsafe report otherwise
-        if ((maxd > 0) & (mind == 0)) | ((mind < 0) & (maxd == 0)) {
-            safe += 1
-        }
+        if safe_report(report) { safe += 1 }
     }
     safe
 }
 
 #[allow(dead_code)]
 pub fn part_two(file: &str) -> i32 {
+    let reports = Reports::new(file);
+    let mut safe = 0;
+    let mut count = -1;
+    for report in reports.reports {
+        count += 1;
+        println!("{} {:?}", count, report);
+        for removal in -1..(report.len() as i32) - 1 {
+            let mut clone = report.clone();
+            if removal > -1 {
+                clone.remove(removal as usize);
+            }
+            if safe_report(clone) {
+                if removal > -1 {
+                    println!(" - safe when level {} removed", report[removal as usize]);
+                } else {
+                    println!(" - safe");
+                }
+                safe += 1;
+                break;
+            }
+        }
+    }
+    safe
+}
+
+pub fn safe_report(report: Vec<i32>) -> bool {
+    // Joost's method
+    let l1 = &report[0..report.len()-1];
+    let l2 = &report[1..report.len()];
+    let increasing = !zip(l1, l2).all(|a| a.0 <= a.1);
+    let decreasing = !zip(l1, l2).all(|a| a.0 >= a.1);
+    if increasing & decreasing { return false }
+    for (a, b) in zip(l1, l2) {
+        let d = (a - b).abs();
+        if (d < 1 ) | (d > 3 ) { return false }
+    }
+    true
+}
+
+#[allow(dead_code)]
+pub fn part_two_original(file: &str) -> i32 {
     let reports = Reports::new(file);
     let mut safe = 0;
     let mut count = 0;
@@ -111,7 +131,7 @@ pub fn part_two(file: &str) -> i32 {
                 if first {
                     first = false;
                 } else {
-                    println!("{} {} {} {}", "previous:".cyan(), previous, "level:".cyan(), level);
+                    println!("{} {} {} {}", "- previous:".cyan(), previous, "level:".cyan(), level);
                     let diff = previous - level;
                     match diff {
                         ..-3 | 4.. => {
@@ -137,6 +157,27 @@ pub fn part_two(file: &str) -> i32 {
                     }
                     // if this_unsafe, ignore this level so that the next level is compared to
                     // current previous. add this unsafe to overall for report
+                    //
+                    // However, this assumes that previous must be kept in all cases and that level is at fault. eg.
+                    //
+                    // 714 [76, 72, 68, 67, 65, 62, 56]
+                    // - previous: 76 level: 72
+                    // - diff out of bounds from 76 to 72
+                    // - previous: 76 level: 68
+                    // - diff out of bounds from 76 to 68
+                    // - previous: 76 level: 67
+                    // - diff out of bounds from 76 to 67
+                    // - previous: 76 level: 65
+                    // - diff out of bounds from 76 to 65
+                    // - previous: 76 level: 62
+                    // - diff out of bounds from 76 to 62
+                    // - previous: 76 level: 56
+                    // - diff out of bounds from 76 to 56
+                    // Unsafe
+                    //
+                    // 72 onwards are all ok, but 76 is the outlier. But in current code, 76 is retained and everything
+                    // else is rejected. A Principal Skinner moment...
+
                     unsafe_count += this_unsafe;
                     if this_unsafe > 0 { break 'nextlevel }
                 }
@@ -157,6 +198,10 @@ pub fn part_two(file: &str) -> i32 {
 
     }
     safe
+}
+
+pub fn part_two_alt() {
+
 }
 
 #[cfg(test)]
