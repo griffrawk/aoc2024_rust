@@ -25,7 +25,7 @@ pub fn part_two(file: &str) -> i32 {
         let opdont = &cap.name("opdont").map_or("nope", |m| m.as_str());
         let a = &cap.name("a").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
         let b = &cap.name("b").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
-        // f opdoflag changes, skip the accumulation
+        // if opdoflag changes, skip the accumulation
         if *opdo == "do()" {
             opdoflag = true
         } else if *opdont == "don't()" {
