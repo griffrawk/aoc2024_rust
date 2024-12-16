@@ -20,7 +20,7 @@ pub fn part_two(file: &str) -> i32 {
     // Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
     // because all 4 captures may not be present. don't() or do() or mul()
     let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
-    for cap in re.captures_iter(&*contents) {
+    for cap in re.captures_iter(&contents) {
         let opdo = &cap.name("opdo").map_or("nope", |m| m.as_str());
         let opdont = &cap.name("opdont").map_or("nope", |m| m.as_str());
         let a = &cap.name("a").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
