@@ -1,5 +1,5 @@
-use std::fs;
 use regex::Regex;
+use std::fs;
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> i32 {
@@ -19,12 +19,21 @@ pub fn part_two(file: &str) -> i32 {
     let mut opdoflag = true;
     // Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
     // because all 4 captures may not be present. don't() or do() or mul()
-    let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
-    for cap in re.captures_iter(&contents) {
-        let opdo = &cap.name("opdo").map_or("nope", |m| m.as_str());
-        let opdont = &cap.name("opdont").map_or("nope", |m| m.as_str());
-        let a = &cap.name("a").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
-        let b = &cap.name("b").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
+    let re =
+        Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
+    for caps in re.captures_iter(&contents) {
+        let opdo = &caps.name("opdo").map_or("nope", |m| m.as_str());
+        let opdont = &caps.name("opdont").map_or("nope", |m| m.as_str());
+        let a = &caps
+            .name("a")
+            .map_or("0", |m| m.as_str())
+            .parse::<i32>()
+            .unwrap();
+        let b = &caps
+            .name("b")
+            .map_or("0", |m| m.as_str())
+            .parse::<i32>()
+            .unwrap();
         // if opdoflag changes, skip the accumulation
         if *opdo == "do()" {
             opdoflag = true
@@ -36,6 +45,29 @@ pub fn part_two(file: &str) -> i32 {
     }
     res
 }
+
+// pub fn part_two_alt(file: &str) -> i32 {
+//     let contents: String = fs::read_to_string(file).expect("Can't read the file");
+//     let mut res = 0;
+//     let mut opdoflag = true;
+// Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
+// because all 4 captures may not be present. don't() or do() or mul()
+// let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
+// for caps in re.captures_iter(&contents) {
+//     let mut it = caps.iter();
+//     loop {      // horrible
+//         let something = it.next().unwrap().map(|m| m.as_str());
+//         match something {
+//             Some("don't()") => println!("{:?}", &something),
+//             Some("do()") => println!("{:?}", &something),
+//             Some("a") => println!("{:?}", &something),
+//             Some("b") => println!("{:?}", &something),
+//             _ => break
+//         }
+//     }
+// }
+// res
+// }
 
 #[cfg(test)]
 mod tests {
