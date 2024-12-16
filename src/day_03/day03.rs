@@ -5,11 +5,9 @@ use regex::Regex;
 pub fn part_one(file: &str) -> i32 {
     let contents: String = fs::read_to_string(file).expect("Can't read the file");
     let mut res = 0;
-    let re = Regex::new(r"mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
-    for cap in re.captures_iter(&*contents) {
-        let a = &cap["a"].parse::<i32>().unwrap();
-        let b = &cap["b"].parse::<i32>().unwrap();
-        res += a * b;
+    let re = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
+    for (_, [a, b]) in re.captures_iter(&contents).map(|c| c.extract()) {
+        res += a.parse::<i32>().unwrap() * b.parse::<i32>().unwrap();
     }
     res
 }
@@ -19,6 +17,8 @@ pub fn part_two(file: &str) -> i32 {
     let contents: String = fs::read_to_string(file).expect("Can't read the file");
     let mut res = 0;
     let mut opdoflag = true;
+    // Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
+    // because all 4 captures may not be present.
     let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
     for cap in re.captures_iter(&*contents) {
         let opdo = &cap.name("opdo").map_or("nope", |m| m.as_str());
