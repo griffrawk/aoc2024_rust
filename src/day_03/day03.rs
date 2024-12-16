@@ -25,10 +25,12 @@ pub fn part_two(file: &str) -> i32 {
         let opdont = &cap.name("opdont").map_or("nope", |m| m.as_str());
         let a = &cap.name("a").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
         let b = &cap.name("b").map_or("0", |m| m.as_str()).parse::<i32>().unwrap();
-        // opdoflag changed so skip the accumulation
-        if *opdo == "do()" { opdoflag = true ; continue}
-        if *opdont == "don't()" { opdoflag = false ; continue}
-        if opdoflag {
+        // f opdoflag changes, skip the accumulation
+        if *opdo == "do()" {
+            opdoflag = true
+        } else if *opdont == "don't()" {
+            opdoflag = false
+        } else if opdoflag {
             res += a * b;
         }
     }
