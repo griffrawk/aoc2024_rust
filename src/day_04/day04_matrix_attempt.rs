@@ -53,6 +53,7 @@ fn serial_rotated_read(input: Vec<String>, rotation: usize ) -> String {
         let y_old = *y as usize;
         let x_new = (*xn + size / 2) as usize;
         let y_new = (*yn + size / 2) as usize;
+        // .get() a &str out of a String, uses a range
         translated[y_new][x_new] = input[y_old].get(x_old..x_old+1).unwrap();
     }
     dbg!(&translated);
