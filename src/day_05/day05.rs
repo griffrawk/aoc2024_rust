@@ -29,9 +29,8 @@ pub fn part_one(file: &str) -> usize {
                 }
             }
         }
-        // dbg!(&update);
         // inc res with middle value
-        res += &update[(update.len() as i32 / 2) as usize]
+        res += update[(update.len() as i32 / 2) as usize]
             .parse::<usize>().unwrap();
     }
     res
