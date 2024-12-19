@@ -10,13 +10,15 @@ fn stringify_rot45(input: &Vec<String>) -> String {
     let mut res = String::new();
     // 1st half
     for base_y in 0..n {
-        let mut y= base_y;
+        let mut y = base_y;
         for x in 0..=base_y {
             // need to check bounds and ignore
             if x < max_x && y < max_y {
-                res.push_str(input[y].get(x..x+1).unwrap());
+                res.push_str(input[y].get(x..x + 1).unwrap());
             }
-            if y > 0 {y -= 1}
+            if y > 0 {
+                y -= 1
+            }
         }
         // delimit the line to avoid wraparound searching when as a flat String
         res.push_str("|");
@@ -24,10 +26,10 @@ fn stringify_rot45(input: &Vec<String>) -> String {
     // 2nd half
     for base_x in 1..n {
         let mut x = base_x;
-        for y in (base_x..n).rev()  {
+        for y in (base_x..n).rev() {
             // need to check bounds and ignore
             if x < max_x && y < max_y {
-                res.push_str(input[y].get(x..x+1).unwrap());
+                res.push_str(input[y].get(x..x + 1).unwrap());
             }
             x += 1;
         }
@@ -44,7 +46,7 @@ fn rot90(input: &Vec<String>) -> Vec<String> {
     for x in (0..m).rev() {
         let mut line = String::new();
         for y in 0..n {
-            line.push_str(input[y].get(x..x+1).unwrap());
+            line.push_str(input[y].get(x..x + 1).unwrap());
         }
         // delimit the line to avoid wraparound searching when as a flat String
         line.push_str("|");
@@ -81,7 +83,38 @@ pub fn part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 pub fn part_two(file: &str) -> i32 {
-    0
+    let mut res = 0;
+    let contents = fs::read_to_string(file).expect("Can't read the file");
+    let mut wordsearch: Vec<String> = Vec::new();
+    for line in contents.lines() {
+        wordsearch.push(line.to_string());
+    }
+    let m = wordsearch[0].len();
+    let n = wordsearch.len();
+
+    fn letter(input: &Vec<String>, x: usize, y: usize) -> &str {
+        input[y].get(x..x + 1).unwrap()
+    }
+
+    for x in 1..m - 1{
+        for y in 1..n -1 {
+            if letter(&wordsearch, x, y) == "A" {
+                if ((letter(&wordsearch, x - 1, y - 1) == "M"
+                    && letter(&wordsearch, x + 1, y + 1) == "S")
+                    || (letter(&wordsearch, x - 1, y - 1) == "S"
+                        && letter(&wordsearch, x + 1, y + 1) == "M"))
+                    && ((letter(&wordsearch, x + 1, y - 1) == "M"
+                        && letter(&wordsearch, x - 1, y + 1) == "S")
+                        || (letter(&wordsearch, x + 1, y - 1) == "S"
+                            && letter(&wordsearch, x - 1, y + 1) == "M"))
+                {
+                    res += 1;
+                }
+            }
+        }
+    }
+
+    res
 }
 
 #[cfg(test)]
@@ -103,12 +136,12 @@ mod tests {
     #[test]
     fn test_part_two_test() {
         let result = part_two("src/day_04/day04_test.txt");
-        assert_eq!(result, 0);
+        assert_eq!(result, 9);
     }
 
     #[test]
     fn test_part_two_data() {
         let result = part_two("src/day_04/day04_data.txt");
-        assert_eq!(result, 0);
+        assert_eq!(result, 1948);
     }
 }
