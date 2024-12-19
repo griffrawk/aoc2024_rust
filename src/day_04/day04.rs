@@ -14,7 +14,7 @@ fn stringify_rot45(input: &Vec<String>) -> String {
         for x in 0..=base_y {
             // need to check bounds and ignore
             if x < max_x && y < max_y {
-                res.push_str(input[y].get(x..x + 1).unwrap());
+                res.push_str(letter(input, x, y));
             }
             if y > 0 {
                 y -= 1
@@ -29,7 +29,7 @@ fn stringify_rot45(input: &Vec<String>) -> String {
         for y in (base_x..n).rev() {
             // need to check bounds and ignore
             if x < max_x && y < max_y {
-                res.push_str(input[y].get(x..x + 1).unwrap());
+                res.push_str(letter(input, x, y));
             }
             x += 1;
         }
@@ -46,13 +46,17 @@ fn rot90(input: &Vec<String>) -> Vec<String> {
     for x in (0..m).rev() {
         let mut line = String::new();
         for y in 0..n {
-            line.push_str(input[y].get(x..x + 1).unwrap());
+            line.push_str(letter(input, x, y));
         }
         // delimit the line to avoid wraparound searching when as a flat String
         line.push_str("|");
         res.push(line);
     }
     res
+}
+
+fn letter(input: &Vec<String>, x: usize, y: usize) -> &str {
+    input[y].get(x..x + 1).unwrap()
 }
 
 #[allow(dead_code)]
@@ -80,8 +84,6 @@ pub fn part_one(file: &str) -> usize {
     res += w135.matches("SAMX").collect::<Vec<_>>().len();
     res
 }
-
-#[allow(dead_code)]
 pub fn part_two(file: &str) -> i32 {
     let mut res = 0;
     let contents = fs::read_to_string(file).expect("Can't read the file");
@@ -91,10 +93,6 @@ pub fn part_two(file: &str) -> i32 {
     }
     let m = wordsearch[0].len();
     let n = wordsearch.len();
-
-    fn letter(input: &Vec<String>, x: usize, y: usize) -> &str {
-        input[y].get(x..x + 1).unwrap()
-    }
 
     for x in 1..m - 1{
         for y in 1..n -1 {
