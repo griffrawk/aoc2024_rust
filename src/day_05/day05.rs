@@ -10,10 +10,10 @@ pub fn part_one(file: &str) -> usize {
 
     for line in contents.lines() {
         if line.contains("|") {
-            rules.insert(line.to_string(), 0);
+            rules.insert(line.trim().to_string(), 0);
         }
         if line.contains(",") {
-            updates.push(line.split(",").collect());
+            updates.push(line.trim().split(",").collect());
         }
     }
 
