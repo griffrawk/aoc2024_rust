@@ -20,13 +20,13 @@ pub fn part_one(file: &str) -> usize {
     'nextupdate: for update in updates {
         for (idx, page) in update.iter().enumerate() {
             for backref in 0..update.len() {
+                let mut key = String::new();
                 if backref < idx {
-                    let key = format!("{}|{}", update[backref], page);
-                    if !rules.contains_key(&key) { continue 'nextupdate}
+                    key = format!("{}|{}", update[backref], page);
                 } else if backref > idx {
-                    let key = format!("{}|{}", page, update[backref]);
-                    if !rules.contains_key(&key) { continue 'nextupdate}
-                }
+                    key = format!("{}|{}", page, update[backref]);
+                } else { continue }
+                if !rules.contains_key(&key) { continue 'nextupdate}
             }
         }
         // inc res with middle value
