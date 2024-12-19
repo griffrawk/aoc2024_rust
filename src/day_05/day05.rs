@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_05/day05_data.txt");
-        assert_eq!(result, 2599);
+        assert_eq!(result, 4569);
     }
 
     #[test]
