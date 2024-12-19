@@ -26,7 +26,7 @@ pub fn part_one(file: &str) -> usize {
                 } else if backref > idx {
                     key = format!("{}|{}", page, update[backref]);
                 } else { continue }
-                if !rules.contains_key(&key) { continue 'nextupdate}
+                if !rules.contains_key(&key) { continue 'nextupdate }
             }
         }
         // inc res with middle value
