@@ -67,6 +67,7 @@ pub fn part_one(file: &str) -> usize {
     let w45 = stringify_rot45(&wordsearch);
     let w90 = rot90(&wordsearch).join("");
     let w135 = stringify_rot45(&rot90(&wordsearch));
+
     res += w0.matches("XMAS").collect::<Vec<_>>().len();
     res += w0.matches("SAMX").collect::<Vec<_>>().len();
     res += w45.matches("XMAS").collect::<Vec<_>>().len();
