@@ -23,14 +23,11 @@ pub fn part_one(file: &str) -> usize {
                 // For each page, check current / next page for valid rule
                 // previous / current is already passed by getting that far so no
                 // need to recheck
-                let mut key = String::new();
                 if fwdref > idx {
-                    key = format!("{}|{}", page, update[fwdref]);
-                } else {
-                    continue
+                    let key = format!("{}|{}", page, update[fwdref]);
+                    // Skip update if rule not found
+                    if !rules.contains_key(&key) { continue 'nextupdate }
                 }
-                // Skip update if rule not found
-                if !rules.contains_key(&key) { continue 'nextupdate }
             }
         }
         // Valid update - inc res with middle value
