@@ -19,15 +19,13 @@ pub fn part_one(file: &str) -> usize {
 
     'nextupdate: for update in updates {
         for (idx, page) in update.iter().enumerate() {
-            for fwdref in idx..update.len() {
+            for fwdref in idx+1..update.len() {
                 // For each page, check current / next page for valid rule
                 // previous / current is already passed by getting that far so no
                 // need to recheck
-                if fwdref > idx {
-                    let key = format!("{}|{}", page, update[fwdref]);
-                    // Skip update if rule not found
-                    if !rules.contains_key(&key) { continue 'nextupdate }
-                }
+                let key = format!("{}|{}", page, update[fwdref]);
+                // Skip update if rule not found
+                if !rules.contains_key(&key) { continue 'nextupdate }
             }
         }
         // Valid update - inc res with middle value
