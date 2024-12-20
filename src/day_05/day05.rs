@@ -19,17 +19,21 @@ pub fn part_one(file: &str) -> usize {
 
     'nextupdate: for update in updates {
         for (idx, page) in update.iter().enumerate() {
-            for backref in 0..update.len() {
+            for fwdref in idx..update.len() {
+                // For each page, check current / next page for valid rule
+                // previous / current is already passed by getting that far so no
+                // need to recheck
                 let mut key = String::new();
-                if backref < idx {
-                    key = format!("{}|{}", update[backref], page);
-                } else if backref > idx {
-                    key = format!("{}|{}", page, update[backref]);
-                } else { continue }
+                if fwdref > idx {
+                    key = format!("{}|{}", page, update[fwdref]);
+                } else {
+                    continue
+                }
+                // Skip update if rule not found
                 if !rules.contains_key(&key) { continue 'nextupdate }
             }
         }
-        // inc res with middle value
+        // Valid update - inc res with middle value
         res += update[(update.len() as i32 / 2) as usize]
             .parse::<usize>().unwrap();
     }
