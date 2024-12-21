@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::ops::Range;
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 struct Point {
@@ -18,22 +19,84 @@ enum Direction {
 #[derive(Debug)]
 struct Guard {
     pos: Point,
+    xrange: Range<i32>,
+    yrange: Range<i32>,
     direction: Direction,
+}
+
+impl Guard {
+    fn new() -> Guard {
+        let pos = Point { x: 0, y: 0 };
+        let xrange = 0..1;
+        let yrange = 0..1;
+        let direction = Direction::North;
+        Self {
+            pos,
+            xrange,
+            yrange,
+            direction,
+        }
+    }
+
+    fn move_guard(&mut self, obstacles: &HashMap<Point, usize>) {
+        loop {
+            // until unblocked move found
+            let mut poss = Point { x: 0, y: 0 };
+            let poss_direction: Direction;
+            match self.direction {
+                Direction::North => {
+                    poss.x = self.pos.x;
+                    poss.y = self.pos.y - 1;
+                    poss_direction = Direction::East;
+                }
+                Direction::East => {
+                    poss.x = self.pos.x + 1;
+                    poss.y = self.pos.y;
+                    poss_direction = Direction::South;
+                }
+                Direction::South => {
+                    poss.x = self.pos.x;
+                    poss.y = self.pos.y + 1;
+                    poss_direction = Direction::West;
+                }
+                Direction::West => {
+                    poss.x = self.pos.x - 1;
+                    poss.y = self.pos.y;
+                    poss_direction = Direction::North;
+                }
+            }
+            if !obstacles.contains_key(&poss) {
+                // valid move
+                self.pos = poss;
+                break;
+            } else {
+                // change direction and try again
+                self.direction = poss_direction;
+            }
+        }
+    }
 }
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    let contents = fs::read_to_string(file).expect("Can't read the file");
     let mut obstacles: HashMap<Point, usize> = HashMap::new();
-    let mut visited: HashMap<Point, usize> = HashMap::new();
-    let mut guard = Guard { pos: Point { x: 0, y: 0} , direction: Direction::North };
+    let mut guard = Guard::new();
 
-    let mut max_x = 0;
     let mut max_y = 0;
-    for line in contents.lines() {
-        max_x = line.len();
-        for (x , _) in line.match_indices("#") {
-            obstacles.insert(Point {x: x as i32, y: max_y }, 0);
+    let mut max_x = 0;
+    for line in fs::read_to_string(file)
+        .expect("Can't read the file")
+        .lines()
+    {
+        max_x = line.len() as i32;
+        for (x, _) in line.match_indices("#") {
+            obstacles.insert(
+                Point {
+                    x: x as i32,
+                    y: max_y,
+                },
+                0,
+            );
         }
         for (g, _) in line.match_indices("^") {
             // should only be one, but if not, it uses the last one found
@@ -42,58 +105,33 @@ pub fn part_one(file: &str) -> usize {
         }
         max_y += 1;
     }
+    guard.xrange = 0..max_x;
+    guard.yrange = 0..max_y;
 
-    let xrange = 0..max_x as i32;
-    let yrange= 0..max_y as i32;
+    // return length of visited points
+    walk_guard(&mut guard, &obstacles).len()
+}
 
+fn walk_guard(guard: &mut Guard, obstacles: &HashMap<Point, usize>) -> HashMap<Point, usize> {
+    let mut visited: HashMap<Point, usize> = HashMap::new();
     // while guard still on grid
-    while xrange.contains(&guard.pos.x) && yrange.contains(&guard.pos.y) {
+    while guard.xrange.contains(&guard.pos.x) && guard.yrange.contains(&guard.pos.y) {
         // record guard position as visited
-        visited.insert(Point { x: guard.pos.x, y: guard.pos.y }, 0);
-        loop {
-            // until unblocked move found
-            let mut poss = Point { x: 0, y: 0 };
-            let poss_direction: Direction;
-            match guard.direction {
-                Direction::North => {
-                    poss.x = guard.pos.x;
-                    poss.y = guard.pos.y - 1;
-                    poss_direction = Direction::East;
-                }
-                Direction::East => {
-                    poss.x = guard.pos.x + 1;
-                    poss.y = guard.pos.y;
-                    poss_direction = Direction::South;
-                }
-                Direction::South => {
-                    poss.x = guard.pos.x;
-                    poss.y = guard.pos.y + 1;
-                    poss_direction = Direction::West;
-                }
-                Direction::West => {
-                    poss.x = guard.pos.x - 1;
-                    poss.y = guard.pos.y;
-                    poss_direction = Direction::North;
-                }
-            }
-            if !obstacles.contains_key(&poss) {
-                // valid move
-                guard.pos.x = poss.x;
-                guard.pos.y = poss.y;
-                break
-            } else {
-                // change direction and try again
-                guard.direction = poss_direction;
-            }
-        }
+        visited.insert(
+            Point {
+                x: guard.pos.x,
+                y: guard.pos.y,
+            },
+            0,
+        );
+        guard.move_guard(&obstacles);
     }
-    // return visited count
-    visited.len()
+    visited
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::day_06::day06::{part_one};
+    use crate::day_06::day06::part_one;
 
     #[test]
     fn test_part_one_test() {
