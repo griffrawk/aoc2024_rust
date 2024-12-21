@@ -94,8 +94,8 @@ pub fn part_two(file: &str) -> i32 {
     let m = wordsearch[0].len();
     let n = wordsearch.len();
 
-    for x in 1..m - 1{
-        for y in 1..n -1 {
+    for x in 1..m - 1 {
+        for y in 1..n - 1 {
             if letter(&wordsearch, x, y) == "A" {
                 if ((letter(&wordsearch, x - 1, y - 1) == "M"
                     && letter(&wordsearch, x + 1, y + 1) == "S")

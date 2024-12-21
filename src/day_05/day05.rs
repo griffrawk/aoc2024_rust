@@ -21,7 +21,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
     'nextupdate: for mut update in updates {
         let mut corrected = false;
         for idx in 0..update.len() {
-            for fwdref in idx+1..update.len() {
+            for fwdref in idx + 1..update.len() {
                 // For each page, check current / next page for valid rule
                 // previous / current is already passed by getting that far so no
                 // need to recheck
@@ -37,7 +37,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
                         update[idx] = temp;
                     } else {
                         // Skip update if rule not found either way round
-                        continue 'nextupdate
+                        continue 'nextupdate;
                     }
                 }
             }
@@ -45,10 +45,12 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
         // Valid update - inc res with middle value
         if corrected {
             corres += update[(update.len() as i32 / 2) as usize]
-                .parse::<usize>().unwrap();
+                .parse::<usize>()
+                .unwrap();
         } else {
             res += update[(update.len() as i32 / 2) as usize]
-                .parse::<usize>().unwrap();
+                .parse::<usize>()
+                .unwrap();
         }
     }
     (res, corres)
@@ -56,7 +58,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_05::day05::{part_one_two};
+    use crate::day_05::day05::part_one_two;
 
     #[test]
     fn test_part_one_two_test() {
@@ -69,5 +71,4 @@ mod tests {
         let result = part_one_two("src/day_05/day05_data.txt");
         assert_eq!(result, (4569, 6456));
     }
-
 }

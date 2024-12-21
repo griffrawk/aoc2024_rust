@@ -25,11 +25,26 @@ struct Guard {
 }
 
 impl Guard {
-    fn new() -> Guard {
-        let pos = Point { x: 0, y: 0 };
-        let xrange = 0..1;
-        let yrange = 0..1;
+    fn new(file: &str) -> Guard {
+        let mut pos = Point { x: 0, y: 0 };
         let direction = Direction::North;
+        let mut max_y = 0;
+        let mut max_x = 0;
+        for line in fs::read_to_string(file)
+            .expect("Can't read the file")
+            .lines()
+        {
+            max_x = line.len() as i32;
+            for (g, _) in line.match_indices("^") {
+                // should only be one, but if not, it uses the last one found
+                pos.x = g as i32;
+                pos.y = max_y;
+            }
+            max_y += 1;
+        }
+        let xrange = 0..max_x;
+        let yrange = 0..max_y;
+
         Self {
             pos,
             xrange,
@@ -38,7 +53,7 @@ impl Guard {
         }
     }
 
-    fn move_guard(&mut self, obstacles: &HashMap<Point, usize>) {
+    fn move_guard(&mut self, obstacles: &Obstacles) {
         loop {
             // until unblocked move found
             let mut poss = Point { x: 0, y: 0 };
@@ -65,7 +80,7 @@ impl Guard {
                     poss_direction = Direction::North;
                 }
             }
-            if !obstacles.contains_key(&poss) {
+            if !obstacles.obstacles.contains_key(&poss) {
                 // valid move
                 self.pos = poss;
                 break;
@@ -76,7 +91,7 @@ impl Guard {
         }
     }
 
-    fn walk_guard(&mut self, obstacles: &HashMap<Point, usize>) -> HashMap<Point, usize> {
+    fn walk_guard(&mut self, obstacles: &Obstacles) -> HashMap<Point, usize> {
         let mut visited: HashMap<Point, usize> = HashMap::new();
         // while guard still on grid
         while self.xrange.contains(&self.pos.x) && self.yrange.contains(&self.pos.y) {
@@ -94,36 +109,31 @@ impl Guard {
     }
 }
 
+struct Obstacles {
+    obstacles: HashMap<Point, usize>,
+}
+
+impl Obstacles {
+    fn new(file: &str) -> Obstacles {
+        let mut obstacles: HashMap<Point, usize> = HashMap::new();
+        let mut y = 0;
+        for line in fs::read_to_string(file)
+            .expect("Can't read the file")
+            .lines()
+        {
+            for (x, _) in line.match_indices("#") {
+                obstacles.insert(Point { x: x as i32, y: y }, 0);
+            }
+            y += 1;
+        }
+        Self { obstacles }
+    }
+}
+
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    let mut obstacles: HashMap<Point, usize> = HashMap::new();
-    let mut guard = Guard::new();
-
-    let mut max_y = 0;
-    let mut max_x = 0;
-    for line in fs::read_to_string(file)
-        .expect("Can't read the file")
-        .lines()
-    {
-        max_x = line.len() as i32;
-        for (x, _) in line.match_indices("#") {
-            obstacles.insert(
-                Point {
-                    x: x as i32,
-                    y: max_y,
-                },
-                0,
-            );
-        }
-        for (g, _) in line.match_indices("^") {
-            // should only be one, but if not, it uses the last one found
-            guard.pos.x = g as i32;
-            guard.pos.y = max_y;
-        }
-        max_y += 1;
-    }
-    guard.xrange = 0..max_x;
-    guard.yrange = 0..max_y;
+    let obstacles = Obstacles::new(&file);
+    let mut guard = Guard::new(&file);
 
     // return length of visited points
     guard.walk_guard(&obstacles).len()
