@@ -46,29 +46,6 @@ pub fn part_two(file: &str) -> i32 {
     res
 }
 
-// pub fn part_two_alt(file: &str) -> i32 {
-//     let contents: String = fs::read_to_string(file).expect("Can't read the file");
-//     let mut res = 0;
-//     let mut opdoflag = true;
-// Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
-// because all 4 captures may not be present. don't() or do() or mul()
-// let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
-// for caps in re.captures_iter(&contents) {
-//     let mut it = caps.iter();
-//     loop {      // horrible
-//         let something = it.next().unwrap().map(|m| m.as_str());
-//         match something {
-//             Some("don't()") => println!("{:?}", &something),
-//             Some("do()") => println!("{:?}", &something),
-//             Some("a") => println!("{:?}", &something),
-//             Some("b") => println!("{:?}", &something),
-//             _ => break
-//         }
-//     }
-// }
-// res
-// }
-
 #[cfg(test)]
 mod tests {
     use crate::day_03::day03::{part_one, part_two};
