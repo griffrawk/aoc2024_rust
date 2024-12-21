@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs;
 
 #[allow(dead_code)]
@@ -6,12 +6,12 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
     let mut res = 0;
     let mut corres = 0;
     let contents = fs::read_to_string(file).expect("Can't read the file");
-    let mut rules: HashMap<String, usize> = HashMap::new();
+    let mut rules: HashSet<String> = HashSet::new();
     let mut updates: Vec<Vec<&str>> = Vec::new();
 
     for line in contents.lines() {
         if line.contains("|") {
-            rules.insert(line.trim().to_string(), 0);
+            rules.insert(line.trim().to_string());
         }
         if line.contains(",") {
             updates.push(line.trim().split(",").collect());
@@ -26,10 +26,10 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
                 // previous / current is already passed by getting that far so no
                 // need to recheck
                 let key = format!("{}|{}", update[idx], update[fwdref]);
-                if !rules.contains_key(&key) {
+                if !rules.contains(&key) {
                     // Try the key the other way round (part 2)
                     let key = format!("{}|{}", update[fwdref], update[idx]);
-                    if rules.contains_key(&key) {
+                    if rules.contains(&key) {
                         corrected = true;
                         // Need to swap the corrected pages, so later checks work
                         let temp = update[fwdref];
