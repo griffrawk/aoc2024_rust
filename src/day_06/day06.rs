@@ -75,6 +75,23 @@ impl Guard {
             }
         }
     }
+
+    fn walk_guard(&mut self, obstacles: &HashMap<Point, usize>) -> HashMap<Point, usize> {
+        let mut visited: HashMap<Point, usize> = HashMap::new();
+        // while guard still on grid
+        while self.xrange.contains(&self.pos.x) && self.yrange.contains(&self.pos.y) {
+            // record guard position as visited
+            visited.insert(
+                Point {
+                    x: self.pos.x,
+                    y: self.pos.y,
+                },
+                0,
+            );
+            self.move_guard(&obstacles);
+        }
+        visited
+    }
 }
 
 #[allow(dead_code)]
@@ -109,24 +126,7 @@ pub fn part_one(file: &str) -> usize {
     guard.yrange = 0..max_y;
 
     // return length of visited points
-    walk_guard(&mut guard, &obstacles).len()
-}
-
-fn walk_guard(guard: &mut Guard, obstacles: &HashMap<Point, usize>) -> HashMap<Point, usize> {
-    let mut visited: HashMap<Point, usize> = HashMap::new();
-    // while guard still on grid
-    while guard.xrange.contains(&guard.pos.x) && guard.yrange.contains(&guard.pos.y) {
-        // record guard position as visited
-        visited.insert(
-            Point {
-                x: guard.pos.x,
-                y: guard.pos.y,
-            },
-            0,
-        );
-        guard.move_guard(&obstacles);
-    }
-    visited
+    guard.walk_guard(&obstacles).len()
 }
 
 #[cfg(test)]
