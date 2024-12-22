@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::ops::Range;
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 struct Point {
@@ -53,7 +54,36 @@ impl Guard {
         }
     }
 
-    fn move_guard(&mut self, obstacles: &Obstacles) {
+    fn reset(&mut self, new_obs: Point, direction: Direction) {
+        match direction {
+            Direction::North => {
+                // guard starts to the south pointing north
+                self.pos.x = new_obs.x;
+                self.pos.y = new_obs.y + 1;
+                self.direction = Direction::North;
+            }
+            Direction::East => {
+                // guard starts to the west pointing east
+                self.pos.x = new_obs.x - 1;
+                self.pos.y = new_obs.y;
+                self.direction = Direction::East;
+            }
+            Direction::South => {
+                // guard starts to the north pointing south
+                self.pos.x = new_obs.x;
+                self.pos.y = new_obs.y - 1;
+                self.direction = Direction::South;
+            }
+            Direction::West => {
+                // guard starts to the east pointing west
+                self.pos.x = new_obs.x + 1;
+                self.pos.y = new_obs.y;
+                self.direction = Direction::West;
+            }
+        }
+    }
+
+    fn step(&mut self, obstacles: &Obstacles) {
         let mut safety_net = 0;
         while safety_net < 3 {
             // until unblocked move found or safety net
@@ -93,7 +123,7 @@ impl Guard {
         }
     }
 
-    fn walk_guard(&mut self, obstacles: &Obstacles) -> (HashMap<Point, Direction>, bool) {
+    fn walk(&mut self, obstacles: &Obstacles) -> (HashMap<Point, Direction>, bool) {
         let mut visited: HashMap<Point, Direction> = HashMap::new();
         let mut stuck = false;
         // while guard still on grid
@@ -122,7 +152,7 @@ impl Guard {
                     );
                 }
             }
-            self.move_guard(&obstacles);
+            self.step(&obstacles);
         }
         (visited, stuck)
     }
@@ -156,7 +186,7 @@ pub fn part_one(file: &str) -> usize {
     let mut guard = Guard::new(&file);
 
     // return length of visited points
-    guard.walk_guard(&obstacles).0.len()
+    guard.walk(&obstacles).0.len()
 }
 
 pub fn part_two(file: &str) -> usize {
@@ -165,39 +195,14 @@ pub fn part_two(file: &str) -> usize {
     let mut res = 0;
 
     // check if a new obs at any of the initial visited points would cause a loop
-    let (visited, _) = guard.walk_guard(&obstacles);
+    let (visited, _) = guard.walk(&obstacles);
     for (new_obs, direction) in visited {
         // add new obstacle
         obstacles.obstacles.insert(new_obs.clone());
-        // reset the guard to the last position before this new obstacle, opposite
-        // to direction. hopefully short circuit un-needed early walking. YES, shaves 12 sec
-        match direction {
-            Direction::North => {
-                // guard starts to the south pointing north
-                guard.pos.x = new_obs.x;
-                guard.pos.y = new_obs.y + 1;
-                guard.direction = Direction::North;
-            }
-            Direction::East => {
-                // guard starts to the west pointing east
-                guard.pos.x = new_obs.x - 1;
-                guard.pos.y = new_obs.y;
-                guard.direction = Direction::East;
-            }
-            Direction::South => {
-                // guard starts to the north pointing south
-                guard.pos.x = new_obs.x;
-                guard.pos.y = new_obs.y - 1;
-                guard.direction = Direction::South;
-            }
-            Direction::West => {
-                // guard starts to the east pointing west
-                guard.pos.x = new_obs.x + 1;
-                guard.pos.y = new_obs.y;
-                guard.direction = Direction::West;
-            }
-        }
-        let (_, stuck) = guard.walk_guard(&obstacles);
+        // reset the guard to the last position before this new obstacle, opposite to direction.
+        guard.reset(new_obs.clone(), direction);
+
+        let (_, stuck) = guard.walk(&obstacles);
         if stuck {
             res += 1;
         }
@@ -207,9 +212,32 @@ pub fn part_two(file: &str) -> usize {
     res
 }
 
+pub fn part_two_parallel(file: &str) -> usize {
+    let obstacles = Obstacles::new(&file);
+    let mut guard = Guard::new(&file);
+
+    // check if a new obs at any of the initial visited points would cause a loop
+    let (visited, _) = guard.walk(&obstacles);
+    let res = visited.into_par_iter().map(|(new_obs, direction): (Point, Direction) | {
+        // add new obstacle
+        let mut clone_obstacles = obstacles.clone();
+        let mut clone_guard = guard.clone();
+        clone_obstacles.obstacles.insert(new_obs.clone());
+        // reset the guard to the last position before this new obstacle, opposite to direction.
+        clone_guard.reset(new_obs.clone(), direction);
+
+        let (_, stuck) = clone_guard.walk(&clone_obstacles);
+        if stuck {
+            return 1;
+        }
+        0
+    }).sum();
+    res
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::day_06::day06::{part_one, part_two};
+    use crate::day_06::day06::{part_one, part_two, part_two_parallel};
 
     #[test]
     fn test_part_one_test() {
@@ -230,8 +258,20 @@ mod tests {
     }
 
     #[test]
+    fn test_part_two_test_parallel() {
+        let result = part_two_parallel("src/day_06/day06_test.txt");
+        assert_eq!(result, 6);
+    }
+
+    #[test]
     fn test_part_two_data() {
         let result = part_two("src/day_06/day06_data.txt");
+        assert_eq!(result, 1933);
+    }
+
+    #[test]
+    fn test_part_two_data_parallel() {
+        let result = part_two_parallel("src/day_06/day06_data.txt");
         assert_eq!(result, 1933);
     }
 }
