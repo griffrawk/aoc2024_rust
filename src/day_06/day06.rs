@@ -192,24 +192,23 @@ pub fn part_one(file: &str) -> usize {
 pub fn part_two(file: &str) -> usize {
     let mut obstacles = Obstacles::new(&file);
     let mut guard = Guard::new(&file);
-    let mut res = 0;
 
     // check if a new obs at any of the initial visited points would cause a loop
     let (visited, _) = guard.walk(&obstacles);
-    for (new_obs, direction) in visited {
+    visited.into_iter().map( |(new_obs, direction)| {
         // add new obstacle
         obstacles.obstacles.insert(new_obs.clone());
         // reset the guard to the last position before this new obstacle, opposite to direction.
         guard.reset(new_obs.clone(), direction);
 
         let (_, stuck) = guard.walk(&obstacles);
+        obstacles.obstacles.remove(&new_obs.clone());
         if stuck {
-            res += 1;
+            return 1;
         }
         // remove obstacle
-        obstacles.obstacles.remove(&new_obs.clone());
-    }
-    res
+        0
+    }).sum()
 }
 
 pub fn part_two_parallel(file: &str) -> usize {
@@ -218,7 +217,7 @@ pub fn part_two_parallel(file: &str) -> usize {
 
     // check if a new obs at any of the initial visited points would cause a loop
     let (visited, _) = guard.walk(&obstacles);
-    let res = visited.into_par_iter().map(|(new_obs, direction): (Point, Direction) | {
+    visited.into_par_iter().map(|(new_obs, direction) | {
         // add new obstacle
         let mut clone_obstacles = obstacles.clone();
         let mut clone_guard = guard.clone();
@@ -231,8 +230,7 @@ pub fn part_two_parallel(file: &str) -> usize {
             return 1;
         }
         0
-    }).sum();
-    res
+    }).sum()
 }
 
 #[cfg(test)]
