@@ -55,8 +55,9 @@ impl Guard {
     }
 
     fn move_guard(&mut self, obstacles: &Obstacles) {
-        loop {
-            // until unblocked move found
+        let mut safety_net = 0;
+        while safety_net < 3 {
+            // until unblocked move found or safety net
             let mut poss = Point { x: 0, y: 0 };
             let poss_direction: Direction;
             match self.direction {
@@ -89,6 +90,7 @@ impl Guard {
                 // change direction and try again
                 self.direction = poss_direction;
             }
+            safety_net += 1;
         }
     }
 
@@ -110,16 +112,17 @@ impl Guard {
                         break;
                     }
                 }
-                None => {}
+                None => {
+                    // record guard position as visited before move
+                    visited.insert(
+                        Point {
+                            x: self.pos.x,
+                            y: self.pos.y,
+                        },
+                        self.direction,
+                    );
+                }
             }
-            // record guard position as visited
-            visited.insert(
-                Point {
-                    x: self.pos.x,
-                    y: self.pos.y,
-                },
-                self.direction,
-            );
             self.move_guard(&obstacles);
         }
         (visited, stuck)
@@ -158,22 +161,49 @@ pub fn part_one(file: &str) -> usize {
 }
 
 pub fn part_two(file: &str) -> usize {
-    let obstacles = Obstacles::new(&file);
-    let guard = Guard::new(&file);
+    let mut obstacles = Obstacles::new(&file);
+    let mut guard = Guard::new(&file);
     let mut res = 0;
 
-    // get initial walk
-    let mut clone_guard = guard.clone();
-    let complete_walk = clone_guard.walk_guard(&obstacles);
-
     // check if a new obs at any of the initial visited points would cause a loop
-    for new_obs in complete_walk.0 {
-        let mut clone_obstacles = obstacles.clone();
-        clone_obstacles.obstacles.insert(new_obs.0);
-        let mut clone_guard = guard.clone();
-        if clone_guard.walk_guard(&clone_obstacles).1 == true {
+    let (visited, _) = guard.walk_guard(&obstacles);
+    for (new_obs, direction) in visited {
+        // add new obstacle
+        obstacles.obstacles.insert(new_obs.clone());
+        // reset the guard to the last position before this new obstacle, opposite
+        // to direction. hopefully short circuit un-needed early walking. YES, shaves 12 sec
+        match direction {
+            Direction::North => {
+                // guard starts to the south pointing north
+                guard.pos.x = new_obs.x;
+                guard.pos.y = new_obs.y + 1;
+                guard.direction = Direction::North;
+            }
+            Direction::East => {
+                // guard starts to the west pointing east
+                guard.pos.x = new_obs.x - 1;
+                guard.pos.y = new_obs.y;
+                guard.direction = Direction::East;
+            }
+            Direction::South => {
+                // guard starts to the north pointing south
+                guard.pos.x = new_obs.x;
+                guard.pos.y = new_obs.y - 1;
+                guard.direction = Direction::South;
+            }
+            Direction::West => {
+                // guard starts to the east pointing west
+                guard.pos.x = new_obs.x + 1;
+                guard.pos.y = new_obs.y;
+                guard.direction = Direction::West;
+            }
+        }
+        let (_, stuck) = guard.walk_guard(&obstacles);
+        if stuck {
             res += 1;
         }
+        // remove obstacle
+        obstacles.obstacles.remove(&new_obs.clone());
     }
     res
 }
