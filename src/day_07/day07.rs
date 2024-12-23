@@ -1,11 +1,14 @@
 use std::fs;
+use aocutils;
 
 #[derive(Debug)]
 enum Operator {
     Add,
     Mul,
+    Conc,
 }
-fn operations(bits: usize) -> Vec<Vec<Operator>> {
+
+pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
     let mut opsteps: Vec<Vec<Operator>> = Vec::new();
     let z = (bits as f32).exp2() as usize;
     for n in 0..z {
@@ -22,6 +25,26 @@ fn operations(bits: usize) -> Vec<Vec<Operator>> {
     }
     opsteps
 }
+fn operations(bits: usize) -> Vec<Vec<Operator>> {
+    let mut opsteps: Vec<Vec<Operator>> = Vec::new();
+    let mut opseq: Vec<Operator> = Vec::new();
+    opsteps.push(opseq);
+
+    //  add add add
+    //          mul
+    //          con
+    //      mul add
+    //          mul
+    //          con
+    //      con add
+    //          mul
+    //          con     add con con might be a prob, the last con is redundant
+    //
+
+
+
+    opsteps
+}
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> i64 {
@@ -34,13 +57,14 @@ pub fn part_one(file: &str) -> i64 {
             .collect();
         // result is eqn[0], others are operands, so we need as many opsteps
         // as there are gaps between operands
-        let opsteps = operations(eqn.len() - 2);
+        let opsteps = binary_operations(eqn.len() - 2);
         for opseq in opsteps {
             let mut sum: i64 = eqn[1];
             for (idx, op) in opseq.into_iter().enumerate() {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
+                    Operator::Conc => {},
                 }
             }
             if sum == eqn[0] {
@@ -52,14 +76,20 @@ pub fn part_one(file: &str) -> i64 {
     res
 }
 
-pub fn part_two(file: &str) -> i32 {
+pub fn part_two(file: &str) -> i64 {
 
     0
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::day_07::day07::{part_one };
+    use crate::day_07::day07::{operations, part_one };
+
+    #[test]
+    fn test_operations() {
+        dbg!(operations(2));
+
+    }
 
     #[test]
     fn test_part_one_test() {

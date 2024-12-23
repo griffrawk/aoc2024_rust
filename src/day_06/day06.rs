@@ -2,12 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::ops::Range;
 use rayon::prelude::*;
-
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
-struct Point {
-    x: i32,
-    y: i32,
-}
+use aocutils::point::Point;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Direction {
@@ -19,7 +14,7 @@ enum Direction {
 
 #[derive(Debug, Clone)]
 struct Guard {
-    pos: Point,
+    pos: Point<i32>,
     xrange: Range<i32>,
     yrange: Range<i32>,
     direction: Direction,
@@ -54,7 +49,7 @@ impl Guard {
         }
     }
 
-    fn reset(&mut self, new_obs: Point, direction: Direction) {
+    fn reset(&mut self, new_obs: Point<i32>, direction: Direction) {
         match direction {
             Direction::North => {
                 // guard starts to the south pointing north
@@ -123,8 +118,8 @@ impl Guard {
         }
     }
 
-    fn walk(&mut self, obstacles: &Obstacles) -> (HashMap<Point, Direction>, bool) {
-        let mut visited: HashMap<Point, Direction> = HashMap::new();
+    fn walk(&mut self, obstacles: &Obstacles) -> (HashMap<Point<i32>, Direction>, bool) {
+        let mut visited: HashMap<Point<i32>, Direction> = HashMap::new();
         let mut stuck = false;
         // while guard still on grid
         while self.xrange.contains(&self.pos.x) && self.yrange.contains(&self.pos.y) {
@@ -160,12 +155,12 @@ impl Guard {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct Obstacles {
-    obstacles: HashSet<Point>,
+    obstacles: HashSet<Point<i32>>,
 }
 
 impl Obstacles {
     fn new(file: &str) -> Obstacles {
-        let mut obstacles: HashSet<Point> = HashSet::new();
+        let mut obstacles: HashSet<Point<i32>> = HashSet::new();
         let mut y = 0;
         for line in fs::read_to_string(file)
             .expect("Can't read the file")
