@@ -30,6 +30,8 @@ fn operations(bits: usize) -> Vec<Vec<Operator>> {
     let mut opseq: Vec<Operator> = Vec::new();
     opsteps.push(opseq);
 
+    // www
+
     //  add add add
     //          mul
     //          con
