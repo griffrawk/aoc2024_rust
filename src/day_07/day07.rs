@@ -1,11 +1,10 @@
-use aocutils;
 use std::fs;
 
 #[derive(Debug)]
 enum Operator {
     Add,
     Mul,
-    Conc,
+    Con,
 }
 
 pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
@@ -64,7 +63,7 @@ pub fn part_one(file: &str) -> i64 {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
-                    Operator::Conc => {}
+                    Operator::Con => {}
                 }
             }
             if sum == eqn[0] {
