@@ -1,5 +1,5 @@
-use std::fs;
 use aocutils;
+use std::fs;
 
 #[derive(Debug)]
 enum Operator {
@@ -16,9 +16,9 @@ pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
         let mut opseq: Vec<Operator> = Vec::new();
         for s in y.chars() {
             match s {
-                '0' => { opseq.push(Operator::Add) },
-                '1' => { opseq.push(Operator::Mul) },
-                _ => panic!()
+                '0' => opseq.push(Operator::Add),
+                '1' => opseq.push(Operator::Mul),
+                _ => panic!(),
             }
         }
         opsteps.push(opseq);
@@ -43,8 +43,6 @@ fn operations(bits: usize) -> Vec<Vec<Operator>> {
     //          con     add con con might be a prob, the last con is redundant
     //
 
-
-
     opsteps
 }
 
@@ -66,7 +64,7 @@ pub fn part_one(file: &str) -> i64 {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
-                    Operator::Conc => {},
+                    Operator::Conc => {}
                 }
             }
             if sum == eqn[0] {
@@ -79,18 +77,16 @@ pub fn part_one(file: &str) -> i64 {
 }
 
 pub fn part_two(file: &str) -> i64 {
-
     0
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::day_07::day07::{operations, part_one };
+    use crate::day_07::day07::{operations, part_one};
 
     #[test]
     fn test_operations() {
         dbg!(operations(2));
-
     }
 
     #[test]
@@ -104,5 +100,4 @@ mod tests {
         let result = part_one("src/day_07/day07_data.txt");
         assert_eq!(result, 1430271835320);
     }
-
 }
