@@ -32,6 +32,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
                     if rules.contains(&key) {
                         corrected = true;
                         // Need to swap the corrected pages, so later checks work
+                        // and we pick the correct middle
                         let temp = update[fwdref];
                         update[fwdref] = update[idx];
                         update[idx] = temp;
@@ -43,12 +44,13 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
             }
         }
         // Valid update - inc res with middle value
+        let middle = (update.len() as i32 / 2) as usize;
         if corrected {
-            corres += update[(update.len() as i32 / 2) as usize]
+            corres += update[middle]
                 .parse::<usize>()
                 .unwrap();
         } else {
-            res += update[(update.len() as i32 / 2) as usize]
+            res += update[middle]
                 .parse::<usize>()
                 .unwrap();
         }

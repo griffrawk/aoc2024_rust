@@ -46,7 +46,7 @@ fn operations(bits: usize) -> Vec<Vec<Operator>> {
 }
 
 #[allow(dead_code)]
-pub fn part_one(file: &str) -> i64 {
+fn part_one(file: &str) -> i64 {
     let mut res = 0;
     let contents: String = fs::read_to_string(file).expect("Can't read the file");
     for line in contents.lines() {
@@ -75,13 +75,24 @@ pub fn part_one(file: &str) -> i64 {
     res
 }
 
-pub fn part_two(file: &str) -> i64 {
+fn part_two(file: &str) -> i64 {
     0
 }
 
 #[cfg(test)]
 mod tests {
     use crate::day_07::day07::{operations, part_one};
+
+    #[test]
+    fn playing() {
+        let fred = String::from("abc123");
+        let mut john: &str = "xyz987";
+        let mut janet = String::from(fred);
+        for c in john.chars() {
+            println!("{}", c);
+        }
+        println!("{}", janet);
+    }
 
     #[test]
     fn test_operations() {
