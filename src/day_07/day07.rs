@@ -24,6 +24,9 @@ pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
     }
     opsteps
 }
+
+// need another way to do operations for 3 states. Jost talked about a recursive
+// method, so might need to have a peek at is code
 fn operations(bits: usize) -> Vec<Vec<Operator>> {
     let mut opsteps: Vec<Vec<Operator>> = Vec::new();
     let mut opseq: Vec<Operator> = Vec::new();
