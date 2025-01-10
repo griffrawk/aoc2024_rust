@@ -166,28 +166,28 @@ impl Obstacles {
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
     let obstacles = Obstacles::new(&file);
-    let mut guard = Guard::new(&file);
+    let mut lab_guard = Guard::new(&file);
 
     // return length of visited points
-    guard.walk(&obstacles).0.len()
+    lab_guard.walk(&obstacles).0.len()
 }
 
 pub fn part_two(file: &str) -> usize {
     let mut obstacles = Obstacles::new(&file);
-    let mut guard = Guard::new(&file);
+    let mut lab_guard = Guard::new(&file);
 
     // check if a new obs at any of the initial visited points would cause a loop
-    guard
+    lab_guard
         .walk(&obstacles)
         .0
         .into_iter()
         .map(|(new_obs, direction)| {
-            // add new obstacle
+            // add new Point clone obstacle to a clone of obstacles
             obstacles.obstacles.insert(new_obs.clone());
             // reset the guard to the last position before this new obstacle, opposite to direction.
-            guard.reset(new_obs.clone(), direction);
-
-            let (_, stuck) = guard.walk(&obstacles);
+            lab_guard.reset(new_obs.clone(), direction);
+            // then run the guard thru new obstacle course
+            let (_, stuck) = lab_guard.walk(&obstacles);
             // remove obstacle
             obstacles.obstacles.remove(&new_obs.clone());
             if stuck {
@@ -200,23 +200,24 @@ pub fn part_two(file: &str) -> usize {
 
 pub fn part_two_parallel(file: &str) -> usize {
     let obstacles = Obstacles::new(&file);
-    let mut guard = Guard::new(&file);
+    let mut lab_guard = Guard::new(&file);
 
     // check if a new obs at any of the initial visited points would cause a loop
-    guard
+    lab_guard
         .walk(&obstacles)
         .0
         .into_par_iter()
         .map(|(new_obs, direction)| {
             // per thread clones
-            // add new obstacle
+            // add new Point clone obstacle to a clone of obstacles
             let mut clone_obstacles = obstacles.clone();
             clone_obstacles.obstacles.insert(new_obs.clone());
             // reset the guard to the last position before this new obstacle, opposite to direction.
-            let mut clone_guard = guard.clone();
+            let mut clone_guard = lab_guard.clone();
             clone_guard.reset(new_obs.clone(), direction);
-
+            // then run the guard thru new obstacle course
             let (_, stuck) = clone_guard.walk(&clone_obstacles);
+            // no need to remove the obstacle as we are parallel running
             if stuck {
                 return 1;
             }
