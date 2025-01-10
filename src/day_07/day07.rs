@@ -4,7 +4,6 @@ use std::fs;
 enum Operator {
     Add,
     Mul,
-    Con,
 }
 
 pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
@@ -66,7 +65,6 @@ fn part_one(file: &str) -> i64 {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
-                    Operator::Con => {}
                 }
             }
             if sum == eqn[0] {

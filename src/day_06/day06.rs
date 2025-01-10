@@ -31,78 +31,44 @@ impl Guard {
             .lines()
         {
             max_x = line.len() as i32;
-            for (g, _) in line.match_indices("^") {
-                // should only be one, but if not, it uses the last one found
-                position.x = g as i32;
-                position.y = max_y;
+            // should only be one, but if not, it uses the last one found
+            if let Some((g, _)) = line.match_indices("^").last() {
+                position = Point { x: g as i32, y: max_y };
             }
             max_y += 1;
         }
-        let xrange = 0..max_x;
-        let yrange = 0..max_y;
 
-        Self {
+        Guard {
             position,
-            xrange,
-            yrange,
+            xrange: 0..max_x,
+            yrange: 0..max_y,
             direction,
         }
     }
 
     fn reset(&mut self, new_obs: Point<i32>, direction: Direction) {
+        self.position = new_obs;
         match direction {
-            Direction::North => {
-                // guard starts to the south pointing north
-                self.position = new_obs;
-                self.position.y += 1;
-                self.direction = Direction::North;
-            }
-            Direction::East => {
-                // guard starts to the west pointing east
-                self.position = new_obs;
-                self.position.x -= 1;
-                self.direction = Direction::East;
-            }
-            Direction::South => {
-                // guard starts to the north pointing south
-                self.position = new_obs;
-                self.position.y -= 1;
-                self.direction = Direction::South;
-            }
-            Direction::West => {
-                // guard starts to the east pointing west
-                self.position = new_obs;
-                self.position.x += 1;
-                self.direction = Direction::West;
-            }
+            Direction::North => self.position.y += 1,
+            Direction::East => self.position.x -= 1,
+            Direction::South => self.position.y -= 1,
+            Direction::West => self.position.x += 1,
         }
+        self.direction = direction;
     }
 
     fn step(&mut self, obstacles: &Obstacles) {
         let mut safety_net = 0;
-        // if guard turns right 4 times, it is trapped
+        // if guard turns right 4 times, it is trapped, so safety net
         while safety_net < 3 {
             // until unblocked move found or safety net
             let mut possible = self.position.clone();
-            let poss_direction: Direction;
-            match self.direction {
-                Direction::North => {
-                    possible.y -= 1;
-                    poss_direction = Direction::East;
-                }
-                Direction::East => {
-                    possible.x += 1;
-                    poss_direction = Direction::South;
-                }
-                Direction::South => {
-                    possible.y += 1;
-                    poss_direction = Direction::West;
-                }
-                Direction::West => {
-                    possible.x -= 1;
-                    poss_direction = Direction::North;
-                }
-            }
+            let poss_direction = match self.direction {
+                Direction::North => { possible.y -= 1; Direction::East }
+                Direction::East => { possible.x += 1; Direction::South }
+                Direction::South => { possible.y += 1; Direction::West }
+                Direction::West => { possible.x -= 1; Direction::North }
+            };
             if !obstacles.obstacles.contains(&possible) {
                 // valid move
                 self.position = possible;
@@ -121,19 +87,13 @@ impl Guard {
         // while guard still on grid
         while self.xrange.contains(&self.position.x) && self.yrange.contains(&self.position.y) {
             // check if guard has been here before in same direction, stuck if so...
-            let previous = visited.get(&self.position);
-            match previous {
-                Some(s) => {
-                    if *s == self.direction {
-                        // been here before in same direction
-                        stuck = true;
-                        break;
-                    }
+            if let Some(&dir) = visited.get(&self.position) {
+                if dir == self.direction {
+                    stuck = true;
+                    break;
                 }
-                None => {
-                    // record guard position as visited before move
-                    visited.insert(self.position.clone(), self.direction);
-                }
+            } else {
+                visited.insert(self.position.clone(), self.direction);
             }
             self.step(&obstacles);
         }
@@ -149,17 +109,15 @@ struct Obstacles {
 impl Obstacles {
     fn new(file: &str) -> Obstacles {
         let mut obstacles: HashSet<Point<i32>> = HashSet::new();
-        let mut y = 0;
-        for line in fs::read_to_string(file)
+        for (y, line) in fs::read_to_string(file)
             .expect("Can't read the file")
-            .lines()
+            .lines().enumerate()
         {
             for (x, _) in line.match_indices("#") {
-                obstacles.insert(Point { x: x as i32, y: y });
+                obstacles.insert(Point { x: x as i32, y: y as i32 });
             }
-            y += 1;
         }
-        Self { obstacles }
+        Obstacles { obstacles }
     }
 }
 
@@ -191,9 +149,10 @@ pub fn part_two(file: &str) -> usize {
             // remove obstacle
             obstacles.obstacles.remove(&new_obs.clone());
             if stuck {
-                return 1;
+                1
+            } else {
+                0
             }
-            0
         })
         .sum()
 }
@@ -219,9 +178,10 @@ pub fn part_two_parallel(file: &str) -> usize {
             let (_, stuck) = clone_guard.walk(&clone_obstacles);
             // no need to remove the obstacle as we are parallel running
             if stuck {
-                return 1;
+                1
+            } else {
+                0
             }
-            0
         })
         .sum()
 }
