@@ -14,7 +14,7 @@ enum Direction {
 
 #[derive(Debug, Clone)]
 struct Guard {
-    pos: Point<i32>,
+    position: Point<i32>,
     xrange: Range<i32>,
     yrange: Range<i32>,
     direction: Direction,
@@ -22,7 +22,7 @@ struct Guard {
 
 impl Guard {
     fn new(file: &str) -> Guard {
-        let mut pos = Point { x: 0, y: 0 };
+        let mut position = Point { x: 0, y: 0 };
         let direction = Direction::North;
         let mut max_y = 0;
         let mut max_x = 0;
@@ -33,8 +33,8 @@ impl Guard {
             max_x = line.len() as i32;
             for (g, _) in line.match_indices("^") {
                 // should only be one, but if not, it uses the last one found
-                pos.x = g as i32;
-                pos.y = max_y;
+                position.x = g as i32;
+                position.y = max_y;
             }
             max_y += 1;
         }
@@ -42,7 +42,7 @@ impl Guard {
         let yrange = 0..max_y;
 
         Self {
-            pos,
+            position,
             xrange,
             yrange,
             direction,
@@ -53,26 +53,26 @@ impl Guard {
         match direction {
             Direction::North => {
                 // guard starts to the south pointing north
-                self.pos = new_obs;
-                self.pos.y += 1;
+                self.position = new_obs;
+                self.position.y += 1;
                 self.direction = Direction::North;
             }
             Direction::East => {
                 // guard starts to the west pointing east
-                self.pos = new_obs;
-                self.pos.x -= 1;
+                self.position = new_obs;
+                self.position.x -= 1;
                 self.direction = Direction::East;
             }
             Direction::South => {
                 // guard starts to the north pointing south
-                self.pos = new_obs;
-                self.pos.y -= 1;
+                self.position = new_obs;
+                self.position.y -= 1;
                 self.direction = Direction::South;
             }
             Direction::West => {
                 // guard starts to the east pointing west
-                self.pos = new_obs;
-                self.pos.x += 1;
+                self.position = new_obs;
+                self.position.x += 1;
                 self.direction = Direction::West;
             }
         }
@@ -83,29 +83,29 @@ impl Guard {
         // if guard turns right 4 times, it is trapped
         while safety_net < 3 {
             // until unblocked move found or safety net
-            let mut poss = self.pos.clone();
+            let mut possible = self.position.clone();
             let poss_direction: Direction;
             match self.direction {
                 Direction::North => {
-                    poss.y -= 1;
+                    possible.y -= 1;
                     poss_direction = Direction::East;
                 }
                 Direction::East => {
-                    poss.x += 1;
+                    possible.x += 1;
                     poss_direction = Direction::South;
                 }
                 Direction::South => {
-                    poss.y += 1;
+                    possible.y += 1;
                     poss_direction = Direction::West;
                 }
                 Direction::West => {
-                    poss.x -= 1;
+                    possible.x -= 1;
                     poss_direction = Direction::North;
                 }
             }
-            if !obstacles.obstacles.contains(&poss) {
+            if !obstacles.obstacles.contains(&possible) {
                 // valid move
-                self.pos = poss;
+                self.position = possible;
                 break;
             } else {
                 // change direction and try again
@@ -119,9 +119,9 @@ impl Guard {
         let mut visited: HashMap<Point<i32>, Direction> = HashMap::new();
         let mut stuck = false;
         // while guard still on grid
-        while self.xrange.contains(&self.pos.x) && self.yrange.contains(&self.pos.y) {
+        while self.xrange.contains(&self.position.x) && self.yrange.contains(&self.position.y) {
             // check if guard has been here before in same direction, stuck if so...
-            let previous = visited.get(&self.pos);
+            let previous = visited.get(&self.position);
             match previous {
                 Some(s) => {
                     if *s == self.direction {
@@ -132,7 +132,7 @@ impl Guard {
                 }
                 None => {
                     // record guard position as visited before move
-                    visited.insert(self.pos.clone(), self.direction);
+                    visited.insert(self.position.clone(), self.direction);
                 }
             }
             self.step(&obstacles);
