@@ -47,7 +47,7 @@ impl City {
     }
 }
 
-fn calc_antinodes(node_a: &Point<i32>, node_b: &Point<i32>, harmonics: bool) -> Vec<Point<i32>> {
+fn calc_antinodes(node_a: &Point<i32>, node_b: &Point<i32>) -> Vec<Point<i32>> {
     let dx = node_a.x - node_b.x;
     let dy = node_a.y - node_b.y;
     vec!(Point { x: node_a.x + dx, y: node_a.y + dy }, Point { x: node_b.x - dx, y: node_b.y - dy })
@@ -61,7 +61,7 @@ pub fn part_one(file: &str) -> usize {
     for (_, group) in city.antennae {
         for (pos, node_a) in group[0..group.len()-1].iter().enumerate() {
             for node_b in group[(pos + 1)..].iter() {
-                for antinode in calc_antinodes(node_a, node_b, false) {
+                for antinode in calc_antinodes(node_a, node_b) {
                     if city.xrange.contains(&antinode.x) && city.yrange.contains(&antinode.y) {
                         antinodes.insert(antinode);
                     }
@@ -81,7 +81,7 @@ mod tests {
     fn test_antinodes() {
         let a: Point<i32> = Point { x: 8, y: 1};
         let b: Point<i32> = Point { x: 5, y: 2};
-        dbg!(&calc_antinodes(&a, &b, false));
+        dbg!(&calc_antinodes(&a, &b));
     }
 
     #[test]
