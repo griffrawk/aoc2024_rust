@@ -60,8 +60,8 @@ pub fn part_one(file: &str) -> usize {
 
     for (_, group) in city.antennae {
         for (pos, node_a) in group[0..group.len()-1].iter().enumerate() {
-            for node_b in group[(pos + 1)..].into_iter() {
-                for antinode in calc_antinodes(node_a, node_b) {
+            for node_b in group[(pos + 1)..].iter() {
+                for antinode in calc_antinodes(node_a, node_b, false) {
                     if city.xrange.contains(&antinode.x) && city.yrange.contains(&antinode.y) {
                         antinodes.insert(antinode);
                     }
@@ -81,7 +81,7 @@ mod tests {
     fn test_antinodes() {
         let a: Point<i32> = Point { x: 8, y: 1};
         let b: Point<i32> = Point { x: 5, y: 2};
-        dbg!(&calc_antinodes(&a, &b));
+        dbg!(&calc_antinodes(&a, &b, false));
     }
 
     #[test]
