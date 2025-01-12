@@ -1,7 +1,6 @@
 use aocutils::point::Point;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::iter::zip;
 use std::ops::Range;
 use itertools::Itertools;
 
@@ -48,10 +47,10 @@ impl City {
     }
 }
 
-fn calc_antinodes(a: &Point<i32>, b: &Point<i32>) -> Vec<Point<i32>> {
-    let dx = a.x - b.x;
-    let dy = a.y - b.y;
-    vec!(Point { x: a.x + dx, y: a.y + dy }, Point { x: b.x - dx, y: b.y - dy })
+fn calc_antinodes(node_a: &Point<i32>, node_b: &Point<i32>, harmonics: bool) -> Vec<Point<i32>> {
+    let dx = node_a.x - node_b.x;
+    let dy = node_a.y - node_b.y;
+    vec!(Point { x: node_a.x + dx, y: node_a.y + dy }, Point { x: node_b.x - dx, y: node_b.y - dy })
 }
 
 #[allow(dead_code)]
@@ -60,11 +59,9 @@ pub fn part_one(file: &str) -> usize {
     let mut antinodes: HashSet<Point<i32>> = HashSet::new();
 
     for (_, group) in city.antennae {
-        for ainc in 0..group.len() - 1 {
-            let a = &group[ainc];
-            for binc in ainc+1..group.len() {
-                let b = &group[binc];
-                for antinode in calc_antinodes(a, b) {
+        for (pos, node_a) in group[0..group.len()-1].iter().enumerate() {
+            for node_b in group[(pos + 1)..].into_iter() {
+                for antinode in calc_antinodes(node_a, node_b) {
                     if city.xrange.contains(&antinode.x) && city.yrange.contains(&antinode.y) {
                         antinodes.insert(antinode);
                     }
