@@ -4,13 +4,14 @@ use std::fs;
 enum Operator {
     Add,
     Mul,
+    Con,
 }
 
 pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
     let mut opsteps: Vec<Vec<Operator>> = Vec::new();
-    let z = (bits as f32).exp2() as usize;
+    let z = 2u32.pow(bits as u32);
     for n in 0..z {
-        let y = format!("{:0b$b}", n, b = bits);
+        let y = format!("{:0b$b}", n, b = bits as usize);
         let mut opseq: Vec<Operator> = Vec::new();
         for s in y.chars() {
             match s {
@@ -26,24 +27,31 @@ pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
 
 // need another way to do operations for 3 states. Jost talked about a recursive
 // method, so might need to have a peek at is code
-fn operations(bits: usize) -> Vec<Vec<Operator>> {
+fn ternary_operations(digits: usize) -> Vec<Vec<Operator>> {
     let mut opsteps: Vec<Vec<Operator>> = Vec::new();
-    let mut opseq: Vec<Operator> = Vec::new();
-    opsteps.push(opseq);
-
-    // www
-
-    //  add add add
-    //          mul
-    //          con
-    //      mul add
-    //          mul
-    //          con
-    //      con add
-    //          mul
-    //          con     add con con might be a prob, the last con is redundant
-    //
-
+    let base: u32 = 3;
+    let z = base.pow(digits as u32);
+    // for n in 0..z {
+        // let mut opseq: Vec<Operator> = Vec::new();
+        // convert n base 10 to base 3, but this only works for n > 0 so we are ignoring 0
+        // and not filling in the leading zeros
+        // let mut i = n;
+        // let mut seq = String::new();
+        // while i > 0 {
+        //     let rem = i % base;
+        //     i /= base;
+        //     seq.push(char::try_from(rem).unwrap())
+        //     }
+        // }
+        // for s in y.chars() {
+        //     match s {
+        //         '0' => opseq.push(Operator::Add),
+        //         '1' => opseq.push(Operator::Mul),
+        //         _ => panic!(),
+        //     }
+        // }
+        // opsteps.push(opseq);
+    // }
     opsteps
 }
 
@@ -65,6 +73,7 @@ fn part_one(file: &str) -> i64 {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
+                    _ => {},
                 }
             }
             if sum == eqn[0] {
@@ -82,22 +91,11 @@ fn part_two(file: &str) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_07::day07::{operations, part_one};
-
-    #[test]
-    fn playing() {
-        let fred = String::from("abc123");
-        let mut john: &str = "xyz987";
-        let mut janet = String::from(fred);
-        for c in john.chars() {
-            println!("{}", c);
-        }
-        println!("{}", janet);
-    }
+    use crate::day_07::day07::{part_one, ternary_operations};
 
     #[test]
     fn test_operations() {
-        dbg!(operations(2));
+        dbg!(ternary_operations(3));
     }
 
     #[test]

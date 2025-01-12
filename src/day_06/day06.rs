@@ -87,6 +87,7 @@ impl Guard {
         // while guard still on grid
         while self.xrange.contains(&self.position.x) && self.yrange.contains(&self.position.y) {
             // check if guard has been here before in same direction, stuck if so...
+
             // if let Some(&dir) = visited.get(&self.position) {
             //     if dir == self.direction {
             //         stuck = true;
@@ -95,6 +96,7 @@ impl Guard {
             // } else {
             //     visited.insert(self.position.clone(), self.direction);
             // }
+            
             match visited.entry(self.position.clone()) {
                 std::collections::hash_map::Entry::Occupied(entry) => {
                     if *entry.get() == self.direction {
