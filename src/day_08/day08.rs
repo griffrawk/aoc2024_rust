@@ -46,48 +46,6 @@ impl City {
     }
 }
 
-fn calc_antinodes(node_a: &Point<i32>, node_b: &Point<i32>) -> Vec<Point<i32>> {
-    let dx = node_a.x - node_b.x;
-    let dy = node_a.y - node_b.y;
-    vec![
-        Point {
-            x: node_a.x + dx,
-            y: node_a.y + dy,
-        },
-        Point {
-            x: node_b.x - dx,
-            y: node_b.y - dy,
-        },
-    ]
-}
-
-fn calc_harmonics(
-    node_a: &Point<i32>,
-    node_b: &Point<i32>,
-    xrange: &Range<i32>,
-    yrange: &Range<i32>,
-) -> Vec<Point<i32>> {
-    // add harmonic antinodes to output until they go beyond ranges
-    let dx = node_a.x - node_b.x;
-    let dy = node_a.y - node_b.y;
-    let mut harmonics: Vec<Point<i32>> = Vec::new();
-    let mut x = node_a.x;
-    let mut y = node_a.y;
-    while xrange.contains(&(x + dx)) && yrange.contains(&(y + dy)) {
-        x += dx;
-        y += dy;
-        harmonics.push(Point { x, y });
-    }
-    let mut x = node_b.x;
-    let mut y = node_b.y;
-    while xrange.contains(&(x - dx)) && yrange.contains(&(y - dy)) {
-        x -= dx;
-        y -= dy;
-        harmonics.push(Point { x, y });
-    }
-    harmonics
-}
-
 #[derive(Debug)]
 struct AntinodeGen {
     antinode: Point<i32>,
