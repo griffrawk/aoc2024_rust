@@ -133,15 +133,8 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_08::day08::{calc_antinodes, part_one_two, AntinodeGen};
+    use crate::day_08::day08::{part_one_two, AntinodeGen};
     use aocutils::point::Point;
-
-    #[test]
-    fn test_antinodes() {
-        let a: Point<i32> = Point { x: 8, y: 1 };
-        let b: Point<i32> = Point { x: 5, y: 2 };
-        dbg!(&calc_antinodes(&a, &b));
-    }
 
     #[test]
     fn test_antinode_gen() {
