@@ -73,25 +73,17 @@ fn calc_harmonics(
     let mut harmonics: Vec<Point<i32>> = Vec::new();
     let mut x = node_a.x;
     let mut y = node_a.y;
-    loop {
+    while xrange.contains(&(x + dx)) && yrange.contains(&(y + dy)) {
         x += dx;
         y += dy;
-        if xrange.contains(&x) && yrange.contains(&y) {
-            harmonics.push(Point { x, y });
-        } else {
-            break;
-        }
+        harmonics.push(Point { x, y });
     }
     let mut x = node_b.x;
     let mut y = node_b.y;
-    loop {
+    while xrange.contains(&(x - dx)) && yrange.contains(&(y - dy)) {
         x -= dx;
         y -= dy;
-        if xrange.contains(&x) && yrange.contains(&y) {
-            harmonics.push(Point { x, y });
-        } else {
-            break;
-        }
+        harmonics.push(Point { x, y });
     }
     harmonics
 }
@@ -103,8 +95,8 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
     let mut antinodes: HashSet<Point<i32>> = HashSet::new();
     let mut harmonics: HashSet<Point<i32>> = HashSet::new();
 
-    for (_, group) in city.antennae {
-        for (pos, node_a) in group[0..group.len() - 1].iter().enumerate() {
+    for group in city.antennae.values() {
+        for (pos, node_a) in group.iter().enumerate().take(group.len() - 1) {
             // node_a also a harmonic antinode
             harmonics.insert(node_a.clone());
             for node_b in group[(pos + 1)..].iter() {
