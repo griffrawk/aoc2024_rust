@@ -88,6 +88,53 @@ fn calc_harmonics(
     harmonics
 }
 
+#[derive(Debug)]
+struct AntinodeGen {
+    antinode: Point<i32>,
+    dx: i32,
+    dy: i32,
+    up: bool,
+}
+
+impl AntinodeGen {
+    pub fn new(node_a: Point<i32>, node_b: Point<i32>, up: bool) -> AntinodeGen {
+        let dx = node_a.x - node_b.x;
+        let dy = node_a.y - node_b.y;
+        if up {
+            // which start point
+            let antinode = node_a;
+            AntinodeGen {
+                antinode,
+                dx,
+                dy,
+                up,
+            }
+        } else {
+            let antinode = node_b;
+            AntinodeGen {
+                antinode,
+                dx,
+                dy,
+                up,
+            }
+        }
+    }
+}
+
+impl Iterator for AntinodeGen {
+    type Item = Point<i32>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.up {
+            self.antinode.x += self.dx;
+            self.antinode.y += self.dy;
+        } else {
+            self.antinode.x -= self.dx;
+            self.antinode.y -= self.dy;
+        }
+        Some(self.antinode)
+    }
+}
+
 #[allow(dead_code)]
 pub fn part_one_two(file: &str) -> (usize, usize) {
     let city = City::new(&file);
@@ -102,14 +149,22 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
             for node_b in group[(pos + 1)..].iter() {
                 // node_b also a harmonic antinode
                 harmonics.insert(node_b.clone());
-                for antinode in calc_antinodes(node_a, node_b) {
-                    if city.xrange.contains(&antinode.x) && city.yrange.contains(&antinode.y) {
-                        antinodes.insert(antinode);
+                let mut gen_loop = |mut antinode_gen: AntinodeGen| {
+                    for (count, antinode) in
+                        antinode_gen.into_iter().enumerate().take_while(|(_, a)| {
+                            city.xrange.contains(&a.x) && city.yrange.contains(&a.y)
+                        })
+                    {
+                        if count == 0 {
+                            antinodes.insert(antinode.clone());
+                        }
+                        harmonics.insert(antinode.clone());
                     }
-                }
-                for harmonic in calc_harmonics(node_a, node_b, &city.xrange, &city.yrange) {
-                    harmonics.insert(harmonic);
-                }
+                };
+                let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), true);
+                gen_loop(antinode_gen);
+                let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), false);
+                gen_loop(antinode_gen);
             }
         }
     }
@@ -118,7 +173,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_08::day08::{calc_antinodes, part_one_two};
+    use crate::day_08::day08::{calc_antinodes, part_one_two, AntinodeGen};
     use aocutils::point::Point;
 
     #[test]
@@ -126,6 +181,19 @@ mod tests {
         let a: Point<i32> = Point { x: 8, y: 1 };
         let b: Point<i32> = Point { x: 5, y: 2 };
         dbg!(&calc_antinodes(&a, &b));
+    }
+
+    #[test]
+    fn test_antinode_gen() {
+        let mut antinodes = AntinodeGen::new(Point { x: 8, y: 1 }, Point { x: 5, y: 2 }, true);
+        dbg!(antinodes.next());
+        dbg!(antinodes.next());
+        dbg!(antinodes.next());
+
+        let mut antinodes = AntinodeGen::new(Point { x: 8, y: 1 }, Point { x: 5, y: 2 }, false);
+        dbg!(antinodes.next());
+        dbg!(antinodes.next());
+        dbg!(antinodes.next());
     }
 
     #[test]
