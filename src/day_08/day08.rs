@@ -161,8 +161,10 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
                         harmonics.insert(antinode.clone());
                     }
                 };
+                // Do the 'up' antinodes
                 let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), true);
                 gen_loop(antinode_gen);
+                // Do the 'down' antinodes
                 let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), false);
                 gen_loop(antinode_gen);
             }
