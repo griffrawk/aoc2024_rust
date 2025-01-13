@@ -58,24 +58,8 @@ impl AntinodeGen {
     pub fn new(node_a: Point<i32>, node_b: Point<i32>, up: bool) -> AntinodeGen {
         let dx = node_a.x - node_b.x;
         let dy = node_a.y - node_b.y;
-        if up {
-            // which start point
-            let antinode = node_a;
-            AntinodeGen {
-                antinode,
-                dx,
-                dy,
-                up,
-            }
-        } else {
-            let antinode = node_b;
-            AntinodeGen {
-                antinode,
-                dx,
-                dy,
-                up,
-            }
-        }
+        let antinode = if up { node_a } else { node_b };
+        AntinodeGen { antinode, dx, dy, up }
     }
 }
 
@@ -120,11 +104,9 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
                     }
                 };
                 // Do the 'up' antinodes
-                let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), true);
-                gen_loop(antinode_gen);
+                gen_loop(AntinodeGen::new(node_a.clone(), node_b.clone(), true));
                 // Do the 'down' antinodes
-                let antinode_gen = AntinodeGen::new(node_a.clone(), node_b.clone(), false);
-                gen_loop(antinode_gen);
+                gen_loop(AntinodeGen::new(node_a.clone(), node_b.clone(), false));
             }
         }
     }
