@@ -91,13 +91,11 @@ impl DiskMap {
             let file = map_count % 2 == 0;
             let length = map_block.to_digit(10).unwrap_or_default();
             if file {
-                // file
                 map_blocks.push(File { length, file_id: Some(file_id), moved: false });
+                file_id += 1;
             } else {
-                // free space
                 map_blocks.push(Gap { length });
             };
-            if file { file_id += 1 };
         }
         let back = map_blocks.len() - 1;
 
