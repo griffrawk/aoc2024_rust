@@ -1,5 +1,4 @@
 use std::fs;
-use MapEntry::{Gap, File};
 
 #[derive(Debug)]
 struct Disk {
@@ -67,8 +66,8 @@ impl Disk {
 
 #[derive(Debug)]
 enum MapEntry {
-    File { length: u32, file_id: Option<usize>, moved: bool },
-    Gap { length: u32 },
+    File { length: usize, file_id: Option<usize>, moved: bool },
+    Gap { length: usize },
 }
 
 #[derive(Debug)]
@@ -89,12 +88,12 @@ impl DiskMap {
             .enumerate()
         {
             let file = map_count % 2 == 0;
-            let length = map_block.to_digit(10).unwrap_or_default();
+            let length = map_block.to_digit(10).unwrap_or_default() as usize;
             if file {
-                map_blocks.push(File { length, file_id: Some(file_id), moved: false });
+                map_blocks.push(MapEntry::File { length, file_id: Some(file_id), moved: false });
                 file_id += 1;
             } else {
-                map_blocks.push(Gap { length });
+                map_blocks.push(MapEntry::Gap { length });
             };
         }
         let back = map_blocks.len() - 1;
@@ -108,8 +107,22 @@ impl DiskMap {
     }
 
     fn checksum(&self) -> usize {
-
-        999
+        let mut res = 0;
+        let mut pos = 0;
+        for entry in &self.map_blocks {
+            match entry {
+                MapEntry::Gap { length } => {
+                    pos += length;
+                },
+                MapEntry::File { length, file_id, moved } => {
+                    for p in pos..pos + length {
+                        res += file_id.unwrap_or_default() * p;
+                    }
+                    pos += length;
+                },
+            }
+        }
+        res
     }
 }
 
