@@ -1,4 +1,5 @@
 use std::fs;
+use MapEntry::{Gap, File};
 
 #[derive(Debug)]
 struct Disk {
@@ -91,10 +92,10 @@ impl DiskMap {
             let length = map_block.to_digit(10).unwrap_or_default();
             if file {
                 // file
-                map_blocks.push(MapEntry::File { length, file_id: Some(file_id), moved: false });
+                map_blocks.push(File { length, file_id: Some(file_id), moved: false });
             } else {
                 // free space
-                map_blocks.push(MapEntry::Gap { length });
+                map_blocks.push(Gap { length });
             };
             if file { file_id += 1 };
         }
