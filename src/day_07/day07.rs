@@ -7,7 +7,7 @@ enum Operator {
     Con,
 }
 
-pub fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
+fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
     let mut opsteps: Vec<Vec<Operator>> = Vec::new();
     let z = 2u32.pow(bits as u32);
     for n in 0..z {

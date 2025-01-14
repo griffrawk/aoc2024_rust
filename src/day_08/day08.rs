@@ -91,7 +91,7 @@ pub fn part_one_two(file: &str) -> (usize, usize) {
             for node_b in group[(pos + 1)..].iter() {
                 // node_b also a harmonic antinode
                 harmonics.insert(node_b.clone());
-                let mut gen_loop = |mut antinode_gen: AntinodeGen| {
+                let mut gen_loop = |antinode_gen: AntinodeGen| {
                     for (count, antinode) in
                         antinode_gen.into_iter().enumerate().take_while(|(_, a)| {
                             city.xrange.contains(&a.x) && city.yrange.contains(&a.y)
