@@ -29,14 +29,29 @@ impl Disk {
             };
             if file { file_id += 1 };
         }
-        let back = blocks.len();
+        let back = blocks.len() - 1;
         Disk { blocks, front, back }
     }
 
-    fn compact(&self) -> usize {
-        let mut checksum = 1928;
-        while self.front < self.back {
-
+    fn compact(&mut self) -> usize {
+        let mut checksum = 0;
+        while self.front <= self.back {
+            match self.blocks[self.front] {
+                Some(file_id) => checksum += file_id * self.front,
+                None => {
+                    while self.back > self.front {
+                        match self.blocks[self.back] {
+                            Some(file_id) => {
+                                checksum += file_id * self.front;
+                                self.back -= 1;
+                                break;
+                            }
+                            None => {}}
+                        self.back -= 1;
+                    }
+                }
+            }
+            self.front += 1;
         }
 
         checksum
@@ -45,8 +60,7 @@ impl Disk {
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    let disk = Disk::new(&file);
-    disk.compact()
+    Disk::new(&file).compact()
 }
 
 #[cfg(test)]
@@ -62,6 +76,6 @@ mod tests {
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_09/day09_data.txt");
-        assert_eq!(result, 369);
+        assert_eq!(result, 6519155389266);
     }
 }
