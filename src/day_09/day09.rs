@@ -112,9 +112,11 @@ impl DiskMap {
         for entry in &self.map_blocks {
             match entry {
                 MapEntry::Gap { length } => {
+                    // increment pos by gap length
                     pos += length;
                 },
                 MapEntry::File { length, file_id, moved } => {
+                    // calculate actual file positions and calc checksum for each block
                     for p in pos..pos + length {
                         res += file_id.unwrap_or_default() * p;
                     }
