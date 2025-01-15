@@ -88,7 +88,6 @@ impl DiskMap {
             .chars()
             .enumerate()
         {
-            // Todo. Need to concatenate consecutive Gap()'s
             let file = map_count % 2 == 0;
             let length = map_block.to_digit(10).unwrap_or_default() as usize;
             if file {
@@ -105,6 +104,8 @@ impl DiskMap {
     }
 
     fn compact_files(&mut self) {
+        // Get rid of any consecutive Gaps in the input
+        self.consolidate_gaps();
         let mut already_processed = self.last_file_id + 1;
         'backloop: while self.back > 0 {
             match self.map_blocks[self.back] {
