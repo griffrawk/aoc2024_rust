@@ -117,12 +117,13 @@ impl DiskMap {
                     // increment pos by gap length
                     pos += length;
                 },
-                MapEntry::File { length, file_id, moved: _ } => {
+                MapEntry::File { mut length, file_id, moved: _ } => {
                     // loop over actual block positions and calc checksum for each block
-                    for p in pos..pos + length {
-                        checksum += file_id * p;
+                    while length > 0 {
+                        checksum += file_id * pos;
+                        pos += 1;
+                        length -= 1;
                     }
-                    pos += length;
                 },
             }
         }
