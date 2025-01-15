@@ -66,7 +66,7 @@ impl Disk {
 
 #[derive(Debug)]
 enum MapEntry {
-    File { length: usize, file_id: Option<usize>, moved: bool },
+    File { length: usize, file_id: usize, moved: bool },
     Gap { length: usize },
 }
 
@@ -90,7 +90,7 @@ impl DiskMap {
             let file = map_count % 2 == 0;
             let length = map_block.to_digit(10).unwrap_or_default() as usize;
             if file {
-                map_blocks.push(MapEntry::File { length, file_id: Some(file_id), moved: false });
+                map_blocks.push(MapEntry::File { length, file_id, moved: false });
                 file_id += 1;
             } else {
                 map_blocks.push(MapEntry::Gap { length });
@@ -107,7 +107,8 @@ impl DiskMap {
     }
 
     fn checksum(&self) -> usize {
-        let mut res = 0;
+        let mut checksum = 0;
+        // keep track of actual block position on disk
         let mut pos = 0;
         for entry in &self.map_blocks {
             match entry {
@@ -115,16 +116,16 @@ impl DiskMap {
                     // increment pos by gap length
                     pos += length;
                 },
-                MapEntry::File { length, file_id, moved } => {
-                    // calculate actual file positions and calc checksum for each block
+                MapEntry::File { length, file_id, moved: _ } => {
+                    // loop over actual block positions and calc checksum for each block
                     for p in pos..pos + length {
-                        res += file_id.unwrap_or_default() * p;
+                        checksum += file_id * p;
                     }
                     pos += length;
                 },
             }
         }
-        res
+        checksum
     }
 }
 
