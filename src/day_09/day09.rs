@@ -1,5 +1,6 @@
 use std::fs;
 
+// Part 1 structs & impl
 #[derive(Debug)]
 struct Disk {
     blocks: Vec<Option<usize>>,
@@ -62,11 +63,10 @@ impl Disk {
     }
 }
 
-// part 2
-
+// Part 2 structs & impl
 #[derive(Debug, Clone)]
 enum MapEntry {
-    File { length: usize, file_id: usize, moved: bool },
+    File { length: usize, file_id: usize },
     Gap { length: usize },
 }
 
@@ -75,6 +75,7 @@ struct DiskMap {
     map_blocks: Vec<MapEntry>,
     front: usize,
     back: usize,
+    last_file_id: usize,
 }
 
 impl DiskMap {
@@ -87,58 +88,101 @@ impl DiskMap {
             .chars()
             .enumerate()
         {
+            // Todo. Need to concatenate consecutive Gap()'s
             let file = map_count % 2 == 0;
             let length = map_block.to_digit(10).unwrap_or_default() as usize;
             if file {
-                map_blocks.push(MapEntry::File { length, file_id, moved: false });
+                map_blocks.push(MapEntry::File { length, file_id });
                 file_id += 1;
             } else {
                 map_blocks.push(MapEntry::Gap { length });
             };
         }
         let back = map_blocks.len() - 1;
+        let last_file_id = file_id;
 
-        DiskMap { map_blocks, front, back }
+        DiskMap { map_blocks, front, back, last_file_id }
     }
 
-    fn compact_files(&mut self)  {
-        let mut back = self.back;
-        let mut blocks_clone = self.map_blocks.clone();
-        while back > 0 {
-            match self.map_blocks[back] {
-                MapEntry::File {length, file_id, moved: _} => {
+    fn compact_files(&mut self) {
+        let mut already_processed = self.last_file_id + 1;
+        'backloop: while self.back > 0 {
+            match self.map_blocks[self.back] {
+                // Process this file only if not previously done. As the back pointer can be reset, we need this to avoid
+                // moving files already discounted for move
+                MapEntry::File { length, file_id } if file_id < already_processed => {
                     let gap_needed = length;
-                    for (front, block) in self.map_blocks[0..back].iter().enumerate() {
-                        match block {
-                            MapEntry::Gap {length} if length > &gap_needed => {
-                                // swap entries in the clone
-                                blocks_clone[front] = MapEntry::File {length: gap_needed, file_id, moved: true };
-                                blocks_clone[back] = MapEntry::Gap {length: gap_needed};
+                    self.front = 0;
+                    while self.front < self.back {
+                        match self.map_blocks[self.front] {
+                            // Find a gap that fits
+                            MapEntry::Gap { length } if length >= gap_needed => {
+                                // Note file_id for restart so this file is ignored on next pass
+                                already_processed = file_id;
+                                // Swap entries
+                                self.map_blocks[self.front] = MapEntry::File { length: gap_needed, file_id };
+                                // Put a Gap where there used to be a File. Doesn't matter if it goes between existing Gaps
+                                // it will be consolidated in a microsec
+                                self.map_blocks[self.back] = MapEntry::Gap { length: gap_needed };
+                                // Check if we need to insert a gap
+                                let new_gap = length - gap_needed;
+                                if new_gap > 0 {
+                                    self.map_blocks.insert(self.front + 1, MapEntry::Gap { length: new_gap });
+                                    self.consolidate_gaps();
+                                    // Start again after consolidating gaps. As length (eg back) may have changed, it is no
+                                    // longer guaranteed to be pointing to this file. Safer to start at the back and ignore
+                                    // processed files based on checking the last file_id.
+                                    continue 'backloop;
+                                }
+                                // Break from front loop
+                                break;
                             },
-                            _ => {},
+                            _ => {}
                         }
+                        self.front += 1;
                     }
                 }
                 _ => {}
             }
-            back -= 1
+            self.back -= 1;
         }
-        self.map_blocks = blocks_clone;
+    }
+
+    fn consolidate_gaps(&mut self) {
+        let mut start = 0;
+        let mut end = self.map_blocks.len() - 1;
+        while start < end {
+            match self.map_blocks[start] {
+                MapEntry::Gap {length: l1} => {
+                        // Look at the next block for a Gap
+                        if let MapEntry::Gap {length: l2 } = self.map_blocks[start + 1] {
+                            // Replace Gap with length = sum of Gaps lengths. Remove Gap + 1
+                            self.map_blocks[start] = MapEntry::Gap {length: l1 + l2};
+                            self.map_blocks.remove(start +1);
+                            end = self.map_blocks.len() - 1;
+                            // Now look for another Gap without moving forward
+                            continue;
+                        }
+                },
+                _ => {},
+            }
+            start += 1;
+        }
+        self.back = self.map_blocks.len() - 1;
     }
 
     fn checksum(&self) -> usize {
-        dbg!(&self.map_blocks);
         let mut checksum = 0;
-        // keep track of actual block position on disk
+        // Keep track of virtual block position on disk
         let mut pos = 0;
         for entry in &self.map_blocks {
             match entry {
                 MapEntry::Gap { length } => {
-                    // increment pos by gap length
+                    // Increment virtual pos by gap length
                     pos += length;
                 },
-                MapEntry::File { mut length, file_id, moved: _ } => {
-                    // loop over actual block positions and calc checksum for each block
+                MapEntry::File { mut length, file_id } => {
+                    // Loop over virtual block positions and calc checksum for each block
                     while length > 0 {
                         checksum += file_id * pos;
                         pos += 1;
@@ -189,6 +233,6 @@ mod tests {
     #[test]
     fn test_part_two_data() {
         let result = part_two("src/day_09/day09_data.txt");
-        assert_eq!(result, 999);
+        assert_eq!(result, 6547228115826);
     }
 }
