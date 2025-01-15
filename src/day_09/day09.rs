@@ -64,7 +64,7 @@ impl Disk {
 }
 
 // Part 2 structs & impl
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 enum MapEntry {
     File { length: usize, file_id: usize },
     Gap { length: usize },
