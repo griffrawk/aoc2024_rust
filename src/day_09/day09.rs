@@ -103,6 +103,7 @@ impl DiskMap {
 
     fn compact_files(&mut self) -> usize {
         dbg!(&self.front, &self.back);
+        // todo
         self.checksum()
     }
 
