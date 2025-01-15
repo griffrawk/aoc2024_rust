@@ -64,7 +64,7 @@ impl Disk {
 
 // part 2
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MapEntry {
     File { length: usize, file_id: usize, moved: bool },
     Gap { length: usize },
@@ -102,11 +102,32 @@ impl DiskMap {
     }
 
     fn compact_files(&mut self)  {
-        dbg!(&self.front, &self.back);
-        // todo
+        let mut back = self.back;
+        let mut blocks_clone = self.map_blocks.clone();
+        while back > 0 {
+            match self.map_blocks[back] {
+                MapEntry::File {length, file_id, moved: _} => {
+                    let gap_needed = length;
+                    for (front, block) in self.map_blocks[0..back].iter().enumerate() {
+                        match block {
+                            MapEntry::Gap {length} if length > &gap_needed => {
+                                // swap entries in the clone
+                                blocks_clone[front] = MapEntry::File {length: gap_needed, file_id, moved: true };
+                                blocks_clone[back] = MapEntry::Gap {length: gap_needed};
+                            },
+                            _ => {},
+                        }
+                    }
+                }
+                _ => {}
+            }
+            back -= 1
+        }
+        self.map_blocks = blocks_clone;
     }
 
     fn checksum(&self) -> usize {
+        dbg!(&self.map_blocks);
         let mut checksum = 0;
         // keep track of actual block position on disk
         let mut pos = 0;
