@@ -83,6 +83,7 @@ impl DiskMap {
         let mut map_blocks = Vec::new();
         let front = 0;
         let mut file_id = 0;
+        let mut last_file_id = 0;
         for (map_count, map_block) in fs::read_to_string(file)
             .expect("Can't read the file")
             .chars()
@@ -92,13 +93,13 @@ impl DiskMap {
             let length = map_block.to_digit(10).unwrap_or_default() as usize;
             if file {
                 map_blocks.push(MapEntry::File { length, file_id });
+                last_file_id = file_id;
                 file_id += 1;
             } else {
                 map_blocks.push(MapEntry::Gap { length });
             };
         }
         let back = map_blocks.len() - 1;
-        let last_file_id = file_id;
 
         DiskMap { map_blocks, front, back, last_file_id }
     }
