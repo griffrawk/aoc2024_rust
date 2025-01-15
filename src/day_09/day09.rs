@@ -101,10 +101,9 @@ impl DiskMap {
         DiskMap { map_blocks, front, back }
     }
 
-    fn compact_files(&mut self) -> usize {
+    fn compact_files(&mut self)  {
         dbg!(&self.front, &self.back);
         // todo
-        self.checksum()
     }
 
     fn checksum(&self) -> usize {
@@ -139,7 +138,9 @@ pub fn part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 pub fn part_two(file: &str) -> usize {
-    DiskMap::new(&file).compact_files()
+    let mut map = DiskMap::new(&file);
+    map.compact_files();
+    map.checksum()
 }
 
 #[cfg(test)]
