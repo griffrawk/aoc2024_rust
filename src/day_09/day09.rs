@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 
 // Part 1 structs & impl
@@ -73,6 +74,7 @@ enum MapEntry {
 #[derive(Debug)]
 struct DiskMap {
     map_blocks: Vec<MapEntry>,
+    gap_map: HashMap<usize, Vec<usize>>,
     front: usize,
     back: usize,
     last_file_id: usize,
@@ -81,6 +83,7 @@ struct DiskMap {
 impl DiskMap {
     fn new(file: &str) -> DiskMap {
         let mut map_blocks = Vec::new();
+        let mut gap_map = HashMap::new();
         let front = 0;
         let mut file_id = 0;
         let mut last_file_id = 0;
@@ -97,11 +100,17 @@ impl DiskMap {
                 file_id += 1;
             } else {
                 map_blocks.push(MapEntry::Gap { length });
+                gap_map
+                    .entry(length)
+                    .and_modify(|e: &mut Vec<usize> | {
+                        e.push(map_count)
+                    })
+                    .or_insert(vec![map_count]);
             };
         }
         let back = map_blocks.len() - 1;
 
-        DiskMap { map_blocks, front, back, last_file_id }
+        DiskMap { map_blocks, gap_map, front, back, last_file_id }
     }
 
     fn compact_files(&mut self) {
@@ -151,6 +160,7 @@ impl DiskMap {
     }
 
     fn consolidate_gaps(&mut self) {
+        // todo Maintain gap_map
         let mut start = 0;
         let mut end = self.map_blocks.len() - 1;
         while start < end {
