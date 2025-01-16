@@ -160,7 +160,7 @@ impl DiskMap {
                         if let MapEntry::Gap {length: l2 } = self.map_blocks[start + 1] {
                             // Replace Gap with length = sum of Gaps lengths. Remove Gap + 1
                             self.map_blocks[start] = MapEntry::Gap {length: l1 + l2};
-                            self.map_blocks.remove(start +1);
+                            self.map_blocks.remove(start + 1);
                             end -= 1;
                             // Now look for another Gap without moving forward
                             continue;
