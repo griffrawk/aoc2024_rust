@@ -24,15 +24,21 @@ impl Disk {
                 if file {
                     // file
                     blocks.push(Some(file_id));
-                  } else {
+                } else {
                     // free space
                     blocks.push(None);
                 };
+            }
+            if file {
+                file_id += 1
             };
-            if file { file_id += 1 };
         }
         let back = blocks.len() - 1;
-        Disk { blocks, front, back }
+        Disk {
+            blocks,
+            front,
+            back,
+        }
     }
 
     fn compact_blocks(&mut self) -> usize {
@@ -102,15 +108,19 @@ impl DiskMap {
                 map_blocks.push(MapEntry::Gap { length });
                 gap_map
                     .entry(length)
-                    .and_modify(|e: &mut Vec<usize> | {
-                        e.push(map_count)
-                    })
+                    .and_modify(|e: &mut Vec<usize>| e.push(map_count))
                     .or_insert(vec![map_count]);
             };
         }
         let back = map_blocks.len() - 1;
 
-        DiskMap { map_blocks, gap_map, front, back, last_file_id }
+        DiskMap {
+            map_blocks,
+            gap_map,
+            front,
+            back,
+            last_file_id,
+        }
     }
 
     fn compact_files(&mut self) {
@@ -131,14 +141,18 @@ impl DiskMap {
                                 // Note file_id for restart so this file is ignored on next pass
                                 already_processed = file_id;
                                 // Swap entries
-                                self.map_blocks[self.front] = MapEntry::File { length: gap_needed, file_id };
+                                self.map_blocks[self.front] = MapEntry::File {
+                                    length: gap_needed,
+                                    file_id,
+                                };
                                 // Put a Gap where there used to be a File. Doesn't matter if it goes between existing Gaps
                                 // it will be consolidated in a microsec
                                 self.map_blocks[self.back] = MapEntry::Gap { length: gap_needed };
                                 // Check if we need to insert a gap
                                 let new_gap = length - gap_needed;
                                 if new_gap > 0 {
-                                    self.map_blocks.insert(self.front + 1, MapEntry::Gap { length: new_gap });
+                                    self.map_blocks
+                                        .insert(self.front + 1, MapEntry::Gap { length: new_gap });
                                     self.consolidate_gaps();
                                     // Start again after consolidating gaps. As length (eg back) may have changed, it is no
                                     // longer guaranteed to be pointing to this file. Safer to start at the back and ignore
@@ -147,7 +161,7 @@ impl DiskMap {
                                 }
                                 // Break from front loop
                                 break;
-                            },
+                            }
                             _ => {}
                         }
                         self.front += 1;
@@ -165,18 +179,18 @@ impl DiskMap {
         let mut end = self.map_blocks.len() - 1;
         while start < end {
             match self.map_blocks[start] {
-                MapEntry::Gap {length: l1} => {
-                        // Look at the next block for a Gap
-                        if let MapEntry::Gap {length: l2 } = self.map_blocks[start + 1] {
-                            // Replace Gap with length = sum of Gaps lengths. Remove Gap + 1
-                            self.map_blocks[start] = MapEntry::Gap {length: l1 + l2};
-                            self.map_blocks.remove(start + 1);
-                            end -= 1;
-                            // Now look for another Gap without moving forward
-                            continue;
-                        }
-                },
-                _ => {},
+                MapEntry::Gap { length: l1 } => {
+                    // Look at the next block for a Gap
+                    if let MapEntry::Gap { length: l2 } = self.map_blocks[start + 1] {
+                        // Replace Gap with length = sum of Gaps lengths. Remove Gap + 1
+                        self.map_blocks[start] = MapEntry::Gap { length: l1 + l2 };
+                        self.map_blocks.remove(start + 1);
+                        end -= 1;
+                        // Now look for another Gap without moving forward
+                        continue;
+                    }
+                }
+                _ => {}
             }
             start += 1;
         }
@@ -192,15 +206,18 @@ impl DiskMap {
                 MapEntry::Gap { length } => {
                     // Increment virtual pos by gap length
                     pos += length;
-                },
-                MapEntry::File { mut length, file_id } => {
+                }
+                MapEntry::File {
+                    mut length,
+                    file_id,
+                } => {
                     // Loop over virtual block positions and calc checksum for each block
                     while length > 0 {
                         checksum += file_id * pos;
                         pos += 1;
                         length -= 1;
                     }
-                },
+                }
             }
         }
         checksum
