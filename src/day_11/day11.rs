@@ -10,7 +10,7 @@ pub fn part_one(file: &str) -> usize {
 
     while iterations > 0 {
         let mut new_stones: Vec<String> = Vec::new();
-        for stone in &stones {
+        for stone in stones {
             if stone == "0" {
                 new_stones.push("1".to_string())
             } else if stone.len() % 2 == 0 {
