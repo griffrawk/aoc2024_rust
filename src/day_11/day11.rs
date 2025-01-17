@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 
 #[allow(dead_code)]
@@ -14,12 +15,12 @@ pub fn part_one(file: &str) -> usize {
             if stone == "0" {
                 new_stones.push("1".to_string())
             } else if stone.len() % 2 == 0 {
-                let a = stone[0..stone.len() / 2].trim_start_matches('0').to_string();
-                new_stones.push(a);
-                let mut b = stone[stone.len() / 2..].trim_start_matches('0').to_string();
+                let (a, mut b) = stone.split_at(stone.len() / 2);
+                new_stones.push(a.trim_start_matches('0').to_string());
+                b = b.trim_start_matches('0');
                 // trim will wipe out b if b = "000"
-                if b == "" { b = "0".to_string()}
-                new_stones.push(b);
+                if b == "" { b = "0"}
+                new_stones.push(b.to_string());
             } else {
                 let mut v = stone.parse::<usize>().unwrap();
                 v *= 2024;
@@ -33,8 +34,40 @@ pub fn part_one(file: &str) -> usize {
 }
 
 #[allow(dead_code)]
-pub fn part_two(file: &str) -> usize {
-    81
+pub fn part_two(file: &str) -> u64 {
+    let mut iterations = 75;
+    let binding = fs::read_to_string(file)
+        .expect("Can't read the file");
+    let mut stones: HashMap<String, u64> = binding
+        .split_whitespace()
+        .fold(HashMap::new(), | mut acc, stone | {
+            let _ = *acc.entry(stone.to_string()).or_insert(1);
+            acc
+        });
+
+    while iterations > 0 {
+        for (stone, count) in stones.clone() {
+            if count > 0 {
+                stones.entry(stone.to_string()).and_modify(|c| *c -= count);
+                if stone == "0" {
+                    stones.entry("1".to_string()).and_modify(|c| *c += count).or_insert(count);
+                } else if stone.len() % 2 == 0 {
+                    let (a, mut b) = stone.split_at(stone.len() / 2);
+                    stones.entry(a.to_string()).and_modify(|c| *c += count).or_insert(count);
+                    b = b.trim_start_matches('0');
+                    // trim will wipe out b if b = "000"
+                    if b == "" { b = "0" }
+                    stones.entry(b.to_string()).and_modify(|c| *c += count).or_insert(count);
+                } else {
+                    let v = stone.parse::<usize>().unwrap() * 2024;
+                    stones.entry(v.to_string()).and_modify(|c| *c += count).or_insert(count);
+                }
+            }
+        }
+        iterations -= 1;
+    }
+
+    stones.values().sum()
 }
 
 #[cfg(test)]
@@ -56,12 +89,12 @@ mod tests {
     #[test]
     fn test_part_two_test() {
         let result = part_two("src/day_11/day11_test.txt");
-        assert_eq!(result, 81);
+        assert_eq!(result, 65601038650482);
     }
 
     #[test]
     fn test_part_two_data() {
-        let result = part_two("src/day_10/day10_data.txt");
-        assert_eq!(result, 928);
+        let result = part_two("src/day_11/day11_data.txt");
+        assert_eq!(result, 231532558973909);
     }
 }
