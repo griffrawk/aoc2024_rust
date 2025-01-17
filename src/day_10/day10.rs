@@ -54,18 +54,21 @@ impl TopoMap {
         }
     }
 
-    fn walk_trails(&mut self) -> usize {
+    fn walk_trails(&mut self, part_two: bool) -> usize {
         for head in self.trailheads.clone() {
             self.visited.drain();
-            self.walk(head);
+            self.walk(head, part_two);
         }
         self.res
     }
 
-    fn walk(&mut self, pos: Point<i32>) {
+    fn walk(&mut self, pos: Point<i32>, part_two: bool) {
         let height = self.heights[&pos];
-        if self.visited.contains(&pos) { return }
-        self.visited.insert(pos);
+        // For part 2, ignore memos, so we find all routes even if partially duplicate
+        if !part_two {
+            if self.visited.contains(&pos) { return }
+            self.visited.insert(pos);
+        }
         if height == 9 {
             self.res += 1;
             return;
@@ -77,7 +80,7 @@ impl TopoMap {
             let next_pos = Point { x: pos.x + dx, y: pos.y + dy };
             if self.xrange.contains(&next_pos.x) && self.yrange.contains(&next_pos.y) {
                 if self.heights[&next_pos] == next_height {
-                    self.walk(next_pos)
+                    self.walk(next_pos, part_two)
                 }
             }
         }
@@ -87,12 +90,12 @@ impl TopoMap {
 // mains
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    TopoMap::new(&file).walk_trails()
+    TopoMap::new(&file).walk_trails(false)
 }
 
 #[allow(dead_code)]
 pub fn part_two(file: &str) -> usize {
-    999
+    TopoMap::new(&file).walk_trails(true)
 }
 
 #[cfg(test)]
@@ -114,12 +117,12 @@ mod tests {
     #[test]
     fn test_part_two_test() {
         let result = part_two("src/day_10/day10_test.txt");
-        assert_eq!(result, 999);
+        assert_eq!(result, 81);
     }
 
     #[test]
     fn test_part_two_data() {
         let result = part_two("src/day_10/day10_data.txt");
-        assert_eq!(result, 999);
+        assert_eq!(result, 928);
     }
 }
