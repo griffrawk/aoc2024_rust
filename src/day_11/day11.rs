@@ -38,7 +38,7 @@ pub fn part_one(file: &str) -> usize {
 pub fn part_two(file: &str) -> u64 {
     // Keep a map of stone to count, sum counts for the answer
     let mut iterations = 75;
-    let mut stones = fs::read_to_string(file)
+    let mut stones: HashMap<String, u64> = fs::read_to_string(file)
         .expect("Can't read the file")
         .split_whitespace()
         .fold(HashMap::new(), | mut acc, stone | {
