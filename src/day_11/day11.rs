@@ -3,6 +3,7 @@ use std::fs;
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
+    // Brute force method
     let mut iterations = 25;
     let mut stones: Vec<String> = fs::read_to_string(file).expect("Can't read the file")
         .split_whitespace()
@@ -35,13 +36,16 @@ pub fn part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 pub fn part_two(file: &str) -> u64 {
+    // Keep a map of stone to count, sum counts for the answer
     let mut iterations = 75;
     let binding = fs::read_to_string(file)
         .expect("Can't read the file");
     let mut stones: HashMap<String, u64> = binding
         .split_whitespace()
         .fold(HashMap::new(), | mut acc, stone | {
-            let _ = *acc.entry(stone.to_string()).or_insert(1);
+            let _ = *acc.entry(stone.to_string())
+                .and_modify(| c | *c += 1)
+                .or_insert(1);
             acc
         });
 
