@@ -8,6 +8,7 @@ use std::ops::Range;
 struct TopoMap {
     heights: HashMap<Point<i32>, u32>,
     trailheads: Vec<Point<i32>>,
+    visited: HashSet<Point<i32>>,
     xrange: Range<i32>,
     yrange: Range<i32>,
     res: usize,
@@ -41,9 +42,12 @@ impl TopoMap {
             }
         }
         let res = 0;
+        let visited = HashSet::new();
+
         TopoMap {
             heights,
             trailheads,
+            visited,
             xrange,
             yrange,
             res,
@@ -52,20 +56,20 @@ impl TopoMap {
 
     fn walk_trails(&mut self) -> usize {
         for head in self.trailheads.clone() {
+            self.visited.drain();
             self.walk(head);
         }
         self.res
     }
 
     fn walk(&mut self, pos: Point<i32>) {
-        let mut visited: HashSet<&Point<i32>> = HashSet::new();
         let height = self.heights[&pos];
-        if visited.contains(&pos) { return }
+        if self.visited.contains(&pos) { return }
+        self.visited.insert(pos);
         if height == 9 {
             self.res += 1;
             return;
         }
-        visited.insert(&pos);
         // look for next higher
         let next_height = height + 1;
         // check N, E, S, W
@@ -104,7 +108,7 @@ mod tests {
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_10/day10_data.txt");
-        assert_eq!(result, 999);
+        assert_eq!(result, 430);
     }
 
     #[test]
