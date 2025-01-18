@@ -50,27 +50,22 @@ pub fn part_two(file: &str) -> u64 {
         for (stone, count) in stones.clone() {
             if count > 0 {
                 stones.entry(stone).and_modify(|c| *c -= count);
+                let mut upd = vec![];
                 if stone == 0 {
-                    stones
-                        .entry(1)
-                        .and_modify(|c| *c += count)
-                        .or_insert(count);
+                    upd.push(1);
                 } else if stone.to_string().len() % 2 == 0 {
                     let stone_string = stone.to_string();
                     let (a, mut b) = stone_string.split_at(stone_string.len() / 2);
-                    stones
-                        .entry(a.parse().unwrap())
-                        .and_modify(|c| *c += count)
-                        .or_insert(count);
-                    stones
-                        .entry(b.parse().unwrap())
-                        .and_modify(|c| *c += count)
-                        .or_insert(count);
+                    upd.push(a.parse().unwrap());
+                    upd.push(b.parse().unwrap());
                 } else {
+                    upd.push(stone * 2024);
+                }
+                for u in upd {
                     stones
-                        .entry(stone * 2024)
-                        .and_modify(|c| *c += count)
-                        .or_insert(count);
+                    .entry(u)
+                    .and_modify(|c| *c += count)
+                    .or_insert(count);
                 }
             }
         }
