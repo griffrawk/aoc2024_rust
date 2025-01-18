@@ -5,30 +5,24 @@ use std::fs;
 pub fn part_one(file: &str) -> usize {
     // Brute force method
     let mut iterations = 25;
-    let mut stones: Vec<String> = fs::read_to_string(file)
+    let mut stones: Vec<u64> = fs::read_to_string(file)
         .expect("Can't read the file")
         .split_whitespace()
-        .filter_map(|s| s.parse().ok())
+        .map(|s| s.parse().unwrap_or_default())
         .collect();
 
     while iterations > 0 {
-        let mut new_stones: Vec<String> = Vec::new();
+        let mut new_stones: Vec<u64> = Vec::new();
         for stone in stones {
-            if stone == "0" {
-                new_stones.push("1".to_string())
-            } else if stone.len() % 2 == 0 {
-                let (a, mut b) = stone.split_at(stone.len() / 2);
-                new_stones.push(a.trim_start_matches('0').to_string());
-                b = b.trim_start_matches('0');
-                // trim will wipe out b if b = "000"
-                if b == "" {
-                    b = "0"
-                }
-                new_stones.push(b.to_string());
+            if stone == 0 {
+                new_stones.push(1)
+            } else if stone.to_string().len() % 2 == 0 {
+                let stone_string = stone.to_string();
+                let (a, mut b) = stone_string.split_at(stone_string.len() / 2);
+                new_stones.push(a.parse().unwrap());
+                new_stones.push(b.parse().unwrap());
             } else {
-                let mut v = stone.parse::<usize>().unwrap();
-                v *= 2024;
-                new_stones.push(v.to_string());
+                new_stones.push(stone * 2024);
             }
         }
         stones = new_stones;
@@ -41,12 +35,12 @@ pub fn part_one(file: &str) -> usize {
 pub fn part_two(file: &str) -> u64 {
     // Keep a map of stone to count, sum counts for the answer
     let mut iterations = 75;
-    let mut stones: HashMap<String, u64> = fs::read_to_string(file)
+    let mut stones: HashMap<u64, u64> = fs::read_to_string(file)
         .expect("Can't read the file")
         .split_whitespace()
-        .fold(HashMap::new(), |mut acc, stone| {
+        .fold(HashMap::new(), |mut acc, s| {
             let _ = *acc
-                .entry(stone.to_string())
+                .entry(s.parse().unwrap_or_default())
                 .and_modify(|c| *c += 1)
                 .or_insert(1);
             acc
@@ -55,31 +49,26 @@ pub fn part_two(file: &str) -> u64 {
     while iterations > 0 {
         for (stone, count) in stones.clone() {
             if count > 0 {
-                stones.entry(stone.to_string()).and_modify(|c| *c -= count);
-                if stone == "0" {
+                stones.entry(stone).and_modify(|c| *c -= count);
+                if stone == 0 {
                     stones
-                        .entry("1".to_string())
+                        .entry(1)
                         .and_modify(|c| *c += count)
                         .or_insert(count);
-                } else if stone.len() % 2 == 0 {
-                    let (a, mut b) = stone.split_at(stone.len() / 2);
+                } else if stone.to_string().len() % 2 == 0 {
+                    let stone_string = stone.to_string();
+                    let (a, mut b) = stone_string.split_at(stone_string.len() / 2);
                     stones
-                        .entry(a.to_string())
+                        .entry(a.parse().unwrap())
                         .and_modify(|c| *c += count)
                         .or_insert(count);
-                    b = b.trim_start_matches('0');
-                    // trim will wipe out b if b = "000"
-                    if b == "" {
-                        b = "0"
-                    }
                     stones
-                        .entry(b.to_string())
+                        .entry(b.parse().unwrap())
                         .and_modify(|c| *c += count)
                         .or_insert(count);
                 } else {
-                    let v = stone.parse::<usize>().unwrap() * 2024;
                     stones
-                        .entry(v.to_string())
+                        .entry(stone * 2024)
                         .and_modify(|c| *c += count)
                         .or_insert(count);
                 }
