@@ -76,8 +76,13 @@ impl TopoMap {
         // look for next higher
         let next_height = height + 1;
         // check N, E, S, W
-        for (dx, dy)  in [(0, -1), (1, 0), (0, 1), (-1, 0)] {
-            let next_pos = Point { x: pos.x + dx, y: pos.y + dy };
+        for dxdy  in [
+            Point { x:0, y: -1 },
+            Point { x: 1, y: 0 },
+            Point { x: 0, y: 1 },
+            Point { x: -1, y: 0}
+        ] {
+            let next_pos = pos + dxdy;
             if self.xrange.contains(&next_pos.x) && self.yrange.contains(&next_pos.y) {
                 if self.heights[&next_pos] == next_height {
                     self.walk(next_pos, part_two)
