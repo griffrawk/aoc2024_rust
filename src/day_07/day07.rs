@@ -4,7 +4,6 @@ use std::fs;
 enum Operator {
     Add,
     Mul,
-    Con,
 }
 
 fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
@@ -22,36 +21,6 @@ fn binary_operations(bits: usize) -> Vec<Vec<Operator>> {
         }
         opsteps.push(opseq);
     }
-    opsteps
-}
-
-// need another way to do operations for 3 states. Jost talked about a recursive
-// method, so might need to have a peek at is code
-fn ternary_operations(digits: usize) -> Vec<Vec<Operator>> {
-    let mut opsteps: Vec<Vec<Operator>> = Vec::new();
-    let base: u32 = 3;
-    let z = base.pow(digits as u32);
-    // for n in 0..z {
-        // let mut opseq: Vec<Operator> = Vec::new();
-        // convert n base 10 to base 3, but this only works for n > 0 so we are ignoring 0
-        // and not filling in the leading zeros
-        // let mut i = n;
-        // let mut seq = String::new();
-        // while i > 0 {
-        //     let rem = i % base;
-        //     i /= base;
-        //     seq.push(char::try_from(rem).unwrap())
-        //     }
-        // }
-        // for s in y.chars() {
-        //     match s {
-        //         '0' => opseq.push(Operator::Add),
-        //         '1' => opseq.push(Operator::Mul),
-        //         _ => panic!(),
-        //     }
-        // }
-        // opsteps.push(opseq);
-    // }
     opsteps
 }
 
@@ -73,7 +42,6 @@ fn part_one(file: &str) -> i64 {
                 match op {
                     Operator::Add => sum += eqn[idx + 2],
                     Operator::Mul => sum *= eqn[idx + 2],
-                    _ => {},
                 }
             }
             if sum == eqn[0] {
@@ -85,18 +53,9 @@ fn part_one(file: &str) -> i64 {
     res
 }
 
-fn part_two(file: &str) -> i64 {
-    0
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::day_07::day07::{part_one, ternary_operations};
-
-    #[test]
-    fn test_operations() {
-        dbg!(ternary_operations(3));
-    }
+    use crate::day_07::day07::part_one;
 
     #[test]
     fn test_part_one_test() {
