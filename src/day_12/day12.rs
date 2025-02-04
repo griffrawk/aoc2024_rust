@@ -3,13 +3,13 @@ use std::fs;
 use std::ops::Range;
 use aocutils::point::Point;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Plot {
     region: Option<usize>,
     crop: char,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Farm {
     farm: HashMap<Point<i32>, Plot>,
     xrange: Range<i32>,
@@ -19,10 +19,9 @@ struct Farm {
 }
 
 impl Farm {
-    fn new(&self, file: &str) -> Self {
+    fn new(file: &str) -> Self {
         // plots addressable by Point
         let mut farm: HashMap<Point<i32>, Plot> = HashMap::new();
-        // let mut regions: HashMap<char, (usize, usize)> = HashMap::new();
         let mut max_x = 0;
         let mut max_y = 0;
         for (y, line) in  fs::read_to_string(file)
@@ -51,8 +50,10 @@ impl Farm {
 
         let plot = self.farm[pos];
         let mut plot_perimeter = 4;
+        // todo might need to do the neighbour loop twice,
+        //  once to calculate the perimeter
+        //  once for the recursion
         for neigbour in pos.cardinal_points() {
-            // goes recursive here somehow
             if self.xrange.contains(&neigbour.x) && self.yrange.contains(&neigbour.y) {
                 if self.farm[&neigbour].crop == *plot.crop {
                     plot_perimeter -= 1;
@@ -61,6 +62,8 @@ impl Farm {
         }
         // todo ah but, is this a new clump of crop or an existing one? can't clump all
         //  plots of a crop together
+
+        // todo how do I decide the region?
         // self.regions.entry(*plot.crop)
         //     .and_modify(| c | {
         //         c.0 += 1;
@@ -68,10 +71,13 @@ impl Farm {
         //     })
         //     .or_insert((1, plot_perimeter));
 
+        // recursion
+        for neigbour in pos.cardinal_points() {}
     }
 }
 
 
+// for reference
 #[allow(dead_code)]
 fn linear_part_one(file: &str) -> usize {
     // plots addressable by Point
@@ -116,7 +122,7 @@ fn linear_part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 fn rec_part_one(file: &str) -> usize {
-    let mut farm = Farm::new(file);
+    let farm = Farm::new(file);
     dbg!(&farm);
 
     1930

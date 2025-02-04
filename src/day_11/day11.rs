@@ -18,7 +18,7 @@ pub fn part_one(file: &str) -> usize {
                 new_stones.push(1)
             } else if stone.to_string().len() % 2 == 0 {
                 let stone_string = stone.to_string();
-                let (a, mut b) = stone_string.split_at(stone_string.len() / 2);
+                let (a, b) = stone_string.split_at(stone_string.len() / 2);
                 new_stones.push(a.parse().unwrap());
                 new_stones.push(b.parse().unwrap());
             } else {
@@ -55,7 +55,7 @@ pub fn part_two(file: &str) -> u64 {
                     upd.push(1);
                 } else if stone.to_string().len() % 2 == 0 {
                     let stone_string = stone.to_string();
-                    let (a, mut b) = stone_string.split_at(stone_string.len() / 2);
+                    let (a, b) = stone_string.split_at(stone_string.len() / 2);
                     upd.push(a.parse().unwrap());
                     upd.push(b.parse().unwrap());
                 } else {
