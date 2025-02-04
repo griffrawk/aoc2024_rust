@@ -1,14 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
-use itertools::interleave;
+use std::ops::Range;
 use aocutils::point::Point;
-
-struct Plot {
-    pos: Point<i32>,
-    region: Option<usize>,
-    crop: char,
-}
-
 
 #[allow(dead_code)]
 fn linear_part_one(file: &str) -> usize {
@@ -52,16 +45,10 @@ fn linear_part_one(file: &str) -> usize {
     regions.iter().map(|(_, (area, perimeter))| area * perimeter).sum()
 }
 
-#[allow(dead_code)]
-fn rec_part_one(file: &str) -> usize {
-
-
-    1930
-}
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    rec_part_one(file)
+    linear_part_one(file)
 }
 
 #[allow(dead_code)]
