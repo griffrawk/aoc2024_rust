@@ -80,7 +80,6 @@ enum MapEntry {
 #[derive(Debug)]
 struct DiskMap {
     map_blocks: Vec<MapEntry>,
-    gap_map: HashMap<usize, Vec<usize>>,
     front: usize,
     back: usize,
     last_file_id: usize,
@@ -116,7 +115,6 @@ impl DiskMap {
 
         DiskMap {
             map_blocks,
-            gap_map,
             front,
             back,
             last_file_id,
