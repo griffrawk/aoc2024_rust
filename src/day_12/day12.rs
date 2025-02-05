@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::ops::Range;
 use aocutils::point::Point;
-use colored::Colorize;
+use colored::{Color, ColoredString, Colorize};
 
 #[derive(Debug, Clone)]
 struct Plot {
@@ -42,9 +42,19 @@ impl Farm {
     }
 
     fn find_regions(&mut self) {
+        // pos is from cloned farm
         for (pos, _) in self.farm.clone() {
-            self.region_rec(pos);
+            // but we check real farm
+            // ony recurse into regionless plots
+            if let None = self.farm[&pos].region {
+                self.region_rec(pos);
+                // exhausted region possibilities of pos, inc region
+                self.current_region += 1;
+            }
         }
+
+        // for test, just first region from 0,0
+        // self.region_rec(Point {x: 0, y:0 });
     }
 
     fn region_rec(&mut self, pos: Point<i32>) {
@@ -77,9 +87,8 @@ impl Farm {
                             // use new region and update pos
                             self.farm.entry(pos)
                                 .and_modify(|p| p.region = Some(self.current_region));
-                            self.current_region += 1;
+
                             // neighbour doesn't have a region, visit recursively
-                            // todo will this get tricky when the neighbour sees the parent?
                             self.region_rec(neigbour_pos);
                         }
                     }
@@ -95,14 +104,36 @@ impl Farm {
         //     })
         //     .or_insert((1, plot_perimeter));
 
-
-        // todo visualise the grid
-        //  colour based on region
-        //  current point is bold
-        self.visualise_farm();
     }
 
     fn visualise_farm(&self) {
+        let colours = vec![
+            Color::Red,
+            Color::Green,
+            Color::Yellow,
+            Color::Blue,
+            Color::Magenta,
+            Color::Cyan,
+            Color::BrightRed,
+            Color::BrightGreen,
+            Color::BrightYellow,
+            Color::BrightBlue,
+            Color::BrightMagenta,
+            Color::BrightCyan,
+        ];
+        for y in self.yrange.clone() {
+            let mut out = String::new();
+            for x in self.xrange.clone() {
+                let pos = Point {x, y};
+                let plot = self.farm[&pos].clone();
+                let mut cstring: ColoredString = plot.crop.to_string().white();
+                if let Some(r) = plot.region {
+                        cstring.fgcolor = Some(colours[r % colours.len()]);
+                }
+                print!("{}", cstring);
+            }
+            println!();
+        }
 
     }
 }
@@ -155,7 +186,13 @@ fn linear_part_one(file: &str) -> usize {
 fn rec_part_one(file: &str) -> usize {
     let mut farm = Farm::new(file);
     farm.find_regions();
-    dbg!(&farm);
+
+    // todo visualise the grid
+    //  colour based on region
+    //  current point is bold
+    farm.visualise_farm();
+
+    // dbg!(&farm);
 
     1930
 }
