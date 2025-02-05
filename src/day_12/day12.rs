@@ -21,7 +21,7 @@ struct Farm {
 
 impl Farm {
     fn new(file: &str) -> Self {
-        // plots addressable by Point
+        // Plots addressable by Point
         let mut farm: HashMap<Point<i32>, Plot> = HashMap::new();
         let mut max_x = 0;
         let mut max_y = 0;
@@ -42,79 +42,69 @@ impl Farm {
     }
 
     fn find_regions(&mut self) {
-        // pos is from cloned farm
+        // pos is from cloned farm, but we check real farm
         for (pos, _) in self.farm.clone() {
-            // but we check real farm
-            // ony recurse into regionless plots
+            // Only recurse into region-less plots
             if let None = self.farm[&pos].region {
                 self.region_rec(pos);
-                // exhausted region possibilities of pos, increment region
+                // Exhausted region possibilities of pos, so increment region
                 self.current_region += 1;
             }
         }
     }
 
     fn region_rec(&mut self, pos: Point<i32>) {
-        // return conditions
+        // Return conditions
         let plot = self.farm[&pos].clone();
         if let Some(_) = plot.region {
             return
         }
 
-        // process plot to find its region, and sumup the region's area & perimeter
-        // assume a standalone crop has perimeter = 4
+        // Process plot to find its region, and sum-up the region's area & perimeter
+        // Assume a standalone crop has perimeter = 4
         let mut plot_perimeter = 4;
+        // Always use new region. If plot has neighbours that will
+        // be overwritten later. This deals with regions of one.
+        self.farm.entry(pos)
+            .and_modify(|p| p.region = Some(self.current_region));
 
-        // does plot have neighbours of same crop?
+        // Does plot have neighbours of same crop?
         for neigbour_pos in pos.cardinal_points() {
             if self.xrange.contains(&neigbour_pos.x) && self.yrange.contains(&neigbour_pos.y) {
                 let neighbour_plot = self.farm[&neigbour_pos].clone();
-                // same crop?
+                // Same crop?
                 if neighbour_plot.crop == plot.crop {
                     // -1 for each same neighbour crop
                     plot_perimeter -= 1;
-
-                    // already in a region?
+                    // Already in a region?
                     match neighbour_plot.region {
                         Some(r) => {
-                            // set plot region to same as neighbour
+                            // Set plot region to same as neighbour
                             self.farm.entry(pos)
                                 .and_modify(|p| p.region = Some(r));
                         }
                         None => {
-                            // use new region and update pos
-                            self.farm.entry(pos)
-                                .and_modify(|p| p.region = Some(self.current_region));
-
-                            // neighbour doesn't have a region, visit recursively
+                            // Neighbour doesn't have a region, visit recursively
                             self.region_rec(neigbour_pos);
                         }
                     }
                 }
-
             }
         }
-        // post-processing
-
-        // if plot_perimeter is still = 4 the plot has no neighbours, but needs
-        // reporting as a region of its own
-        if plot_perimeter == 4 {
-            // use new region and update pos
-            self.farm.entry(pos)
-                .and_modify(|p| p.region = Some(self.current_region));
-        }
-
-        // update region area & perimeter with a new clone of plot
+        // Post-processing
+        // Sum-up region area & perimeter with data from a new clone of plot
         let plot = self.farm[&pos].clone();
         self.regions.entry(plot.region.unwrap())
             .and_modify(| c | {
-                c.0 += 1;
-                c.1 += plot_perimeter;
+                c.0 += 1;                           // Area
+                c.1 += plot_perimeter;              // Perimeter
             })
             .or_insert((1, plot_perimeter));
     }
 
     fn visualise_farm(&self) {
+        // Attempt to visualise the farm as a coloured map. Unaware of the
+        // 4-colour problem, it can output regions with touching similar colours
         let colours = vec![
             Color::Red,
             Color::Green,
@@ -122,20 +112,26 @@ impl Farm {
             Color::Blue,
             Color::Magenta,
             Color::Cyan,
+            Color::White,
             Color::BrightRed,
             Color::BrightGreen,
             Color::BrightYellow,
             Color::BrightBlue,
             Color::BrightMagenta,
             Color::BrightCyan,
+            Color::BrightWhite,
         ];
+        let italic = "Italic".italic();
         for y in self.yrange.clone() {
             for x in self.xrange.clone() {
                 let pos = Point {x, y};
                 let plot = self.farm[&pos].clone();
-                let mut cstring = plot.crop.to_string().white();
+                let mut cstring: ColoredString = plot.crop.to_string().normal();
                 if let Some(r) = plot.region {
-                        cstring.fgcolor = Some(colours[r % colours.len()]);
+                    cstring.fgcolor = Some(colours[r % colours.len()]);
+                    if r % 2 == 0 {
+                        cstring.style = italic.style
+                    }
                 }
                 print!("{}", cstring);
             }
