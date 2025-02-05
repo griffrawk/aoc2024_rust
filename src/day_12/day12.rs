@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::ops::Range;
 use aocutils::point::Point;
-use colored::{Color, ColoredString, Colorize};
+use colored::*;
 
 #[derive(Debug, Clone)]
 struct Plot {
@@ -48,13 +48,10 @@ impl Farm {
             // ony recurse into regionless plots
             if let None = self.farm[&pos].region {
                 self.region_rec(pos);
-                // exhausted region possibilities of pos, inc region
+                // exhausted region possibilities of pos, increment region
                 self.current_region += 1;
             }
         }
-
-        // for test, just first region from 0,0
-        // self.region_rec(Point {x: 0, y:0 });
     }
 
     fn region_rec(&mut self, pos: Point<i32>) {
@@ -64,11 +61,9 @@ impl Farm {
             return
         }
 
-        // process plot
-        // let mut plot_perimeter = 4;
-        // todo might need to do the neighbour loop twice,
-        //  once to calculate the perimeter
-        //  once for the recursion
+        // process plot to find its region, and sumup the region's area & perimeter
+        // assume a standalone crop has perimeter = 4
+        let mut plot_perimeter = 4;
 
         // does plot have neighbours of same crop?
         for neigbour_pos in pos.cardinal_points() {
@@ -76,6 +71,9 @@ impl Farm {
                 let neighbour_plot = self.farm[&neigbour_pos].clone();
                 // same crop?
                 if neighbour_plot.crop == plot.crop {
+                    // -1 for each same neighbour crop
+                    plot_perimeter -= 1;
+
                     // already in a region?
                     match neighbour_plot.region {
                         Some(r) => {
@@ -92,18 +90,28 @@ impl Farm {
                             self.region_rec(neigbour_pos);
                         }
                     }
-                    // plot_perimeter -= 1;
                 }
+
             }
         }
-        // todo how do I decide the region?
-        // self.regions.entry(*plot.crop)
-        //     .and_modify(| c | {
-        //         c.0 += 1;
-        //         c.1 += plot_perimeter;
-        //     })
-        //     .or_insert((1, plot_perimeter));
+        // post-processing
 
+        // if plot_perimeter is still = 4 the plot has no neighbours, but needs
+        // reporting as a region of its own
+        if plot_perimeter == 4 {
+            // use new region and update pos
+            self.farm.entry(pos)
+                .and_modify(|p| p.region = Some(self.current_region));
+        }
+
+        // update region area & perimeter with a new clone of plot
+        let plot = self.farm[&pos].clone();
+        self.regions.entry(plot.region.unwrap())
+            .and_modify(| c | {
+                c.0 += 1;
+                c.1 += plot_perimeter;
+            })
+            .or_insert((1, plot_perimeter));
     }
 
     fn visualise_farm(&self) {
@@ -122,11 +130,10 @@ impl Farm {
             Color::BrightCyan,
         ];
         for y in self.yrange.clone() {
-            let mut out = String::new();
             for x in self.xrange.clone() {
                 let pos = Point {x, y};
                 let plot = self.farm[&pos].clone();
-                let mut cstring: ColoredString = plot.crop.to_string().white();
+                let mut cstring = plot.crop.to_string().white();
                 if let Some(r) = plot.region {
                         cstring.fgcolor = Some(colours[r % colours.len()]);
                 }
@@ -138,68 +145,12 @@ impl Farm {
     }
 }
 
-
-// for reference
 #[allow(dead_code)]
-fn linear_part_one(file: &str) -> usize {
-    // plots addressable by Point
-    let mut farm: HashMap<Point<i32>, char> = HashMap::new();
-    let mut regions: HashMap<char, (usize, usize)> = HashMap::new();
-    let mut max_x = 0;
-    let mut max_y = 0;
-    for (y, line) in  fs::read_to_string(file)
-        .expect("Can't read the file")
-        .lines()
-        .enumerate() {
-        max_y = y as i32;
-        for (x, c) in line.chars().enumerate() {
-            max_x = x as i32;
-            farm.insert(Point {x: x as i32, y: y as i32}, c);
-        }
-    }
-    let xrange = 0..max_x + 1;
-    let yrange = 0..max_y + 1;
-    // process regions
-    for (plot, crop) in &farm {
-        let mut plot_perimeter = 4;
-        for neigbour in plot.cardinal_points() {
-            if xrange.contains(&neigbour.x) && yrange.contains(&neigbour.y) {
-                if farm[&neigbour] == *crop {
-                    plot_perimeter -= 1;
-                }
-            }
-        }
-        // todo ah but, is this a new clump of crop or an existing one? can't clump all
-        //  plots of a crop together
-        regions.entry(*crop)
-            .and_modify(| c | {
-                c.0 += 1;
-                c.1 += plot_perimeter;
-            })
-            .or_insert((1, plot_perimeter));
-    }
-    // calculate cost,
-    regions.iter().map(|(_, (area, perimeter))| area * perimeter).sum()
-}
-
-#[allow(dead_code)]
-fn rec_part_one(file: &str) -> usize {
+fn part_one(file: &str) -> usize {
     let mut farm = Farm::new(file);
     farm.find_regions();
-
-    // todo visualise the grid
-    //  colour based on region
-    //  current point is bold
     farm.visualise_farm();
-
-    // dbg!(&farm);
-
-    1930
-}
-
-#[allow(dead_code)]
-pub fn part_one(file: &str) -> usize {
-    rec_part_one(file)
+    farm.regions.iter().map(|(_, (area, perimeter))| area * perimeter).sum()
 }
 
 // #[allow(dead_code)]
@@ -220,7 +171,7 @@ mod tests {
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_12/day12_data.txt");
-        assert_eq!(result, 194557);
+        assert_eq!(result, 1449902);
     }
 
     // #[test]
