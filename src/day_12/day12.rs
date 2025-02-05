@@ -42,7 +42,6 @@ impl Farm {
     }
 
     fn find_regions(&mut self) {
-        // pos is from cloned farm, but we check real farm
         for (pos, _) in self.farm.clone() {
             // Only recurse into region-less plots
             if let None = self.farm[&pos].region {
@@ -71,7 +70,7 @@ impl Farm {
         // Does plot have neighbours of same crop?
         for neigbour_pos in pos.cardinal_points() {
             if self.xrange.contains(&neigbour_pos.x) && self.yrange.contains(&neigbour_pos.y) {
-                let neighbour_plot = self.farm[&neigbour_pos].clone();
+                let neighbour_plot = &self.farm[&neigbour_pos];
                 // Same crop?
                 if neighbour_plot.crop == plot.crop {
                     // -1 for each same neighbour crop
@@ -92,8 +91,8 @@ impl Farm {
             }
         }
         // Post-processing
-        // Sum-up region area & perimeter with data from a new clone of plot
-        let plot = self.farm[&pos].clone();
+        // Sum-up region area & perimeter
+        let plot = &self.farm[&pos];
         self.regions.entry(plot.region.unwrap())
             .and_modify(| c | {
                 c.0 += 1;                           // Area
@@ -105,6 +104,7 @@ impl Farm {
     fn visualise_farm(&self) {
         // Attempt to visualise the farm as a coloured map. Unaware of the
         // 4-colour problem, it can output regions with touching similar colours
+        // 36 combinations aren't enough it seems...
         let colours = vec![
             Color::Red,
             Color::Green,
@@ -122,15 +122,17 @@ impl Farm {
             Color::BrightWhite,
         ];
         let italic = "Italic".italic();
+        let bold = "Bold".bold();
         for y in self.yrange.clone() {
             for x in self.xrange.clone() {
-                let pos = Point {x, y};
-                let plot = self.farm[&pos].clone();
+                let plot = &self.farm[&Point { x, y }];
                 let mut cstring: ColoredString = plot.crop.to_string().normal();
                 if let Some(r) = plot.region {
                     cstring.fgcolor = Some(colours[r % colours.len()]);
-                    if r % 2 == 0 {
-                        cstring.style = italic.style
+                    match r % 3 {
+                        0 => cstring.style = italic.style,
+                        1 => cstring.style = bold.style,
+                        _ => ()
                     }
                 }
                 print!("{}", cstring);
