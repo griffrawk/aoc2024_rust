@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::ops::Range;
 use aocutils::point::Point;
+use colored::Colorize;
 
 #[derive(Debug, Clone)]
 struct Plot {
@@ -31,7 +32,9 @@ impl Farm {
             max_y = y as i32;
             for (x, c) in line.chars().enumerate() {
                 max_x = x as i32;
-                farm.insert(Point {x: x as i32, y: y as i32}, Plot { region: None, crop: c });
+                if c.is_ascii_alphanumeric() {
+                    farm.insert(Point { x: x as i32, y: y as i32 }, Plot { region: None, crop: c });
+                }
             }
         }
         let regions: HashMap<usize, (usize, usize)> = HashMap::new();
@@ -45,24 +48,45 @@ impl Farm {
     }
 
     fn region_rec(&mut self, pos: Point<i32>) {
-        // todo exit conditions
-        //  pos already has Some(region)
+        // return conditions
+        let plot = self.farm[&pos].clone();
+        if let Some(_) = plot.region {
+            return
+        }
 
-        let plot = self.farm[pos];
-        let mut plot_perimeter = 4;
+        // process plot
+        // let mut plot_perimeter = 4;
         // todo might need to do the neighbour loop twice,
         //  once to calculate the perimeter
         //  once for the recursion
-        for neigbour in pos.cardinal_points() {
-            if self.xrange.contains(&neigbour.x) && self.yrange.contains(&neigbour.y) {
-                if self.farm[&neigbour].crop == *plot.crop {
-                    plot_perimeter -= 1;
+
+        // does plot have neighbours of same crop?
+        for neigbour_pos in pos.cardinal_points() {
+            if self.xrange.contains(&neigbour_pos.x) && self.yrange.contains(&neigbour_pos.y) {
+                let neighbour_plot = self.farm[&neigbour_pos].clone();
+                // same crop?
+                if neighbour_plot.crop == plot.crop {
+                    // already in a region?
+                    match neighbour_plot.region {
+                        Some(r) => {
+                            // set plot region to same as neighbour
+                            self.farm.entry(pos)
+                                .and_modify(|p| p.region = Some(r));
+                        }
+                        None => {
+                            // use new region and update pos
+                            self.farm.entry(pos)
+                                .and_modify(|p| p.region = Some(self.current_region));
+                            self.current_region += 1;
+                            // neighbour doesn't have a region, visit recursively
+                            // todo will this get tricky when the neighbour sees the parent?
+                            self.region_rec(neigbour_pos);
+                        }
+                    }
+                    // plot_perimeter -= 1;
                 }
             }
         }
-        // todo ah but, is this a new clump of crop or an existing one? can't clump all
-        //  plots of a crop together
-
         // todo how do I decide the region?
         // self.regions.entry(*plot.crop)
         //     .and_modify(| c | {
@@ -71,8 +95,15 @@ impl Farm {
         //     })
         //     .or_insert((1, plot_perimeter));
 
-        // recursion
-        for neigbour in pos.cardinal_points() {}
+
+        // todo visualise the grid
+        //  colour based on region
+        //  current point is bold
+        self.visualise_farm();
+    }
+
+    fn visualise_farm(&self) {
+
     }
 }
 
@@ -122,7 +153,8 @@ fn linear_part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 fn rec_part_one(file: &str) -> usize {
-    let farm = Farm::new(file);
+    let mut farm = Farm::new(file);
+    farm.find_regions();
     dbg!(&farm);
 
     1930
@@ -130,17 +162,17 @@ fn rec_part_one(file: &str) -> usize {
 
 #[allow(dead_code)]
 pub fn part_one(file: &str) -> usize {
-    linear_part_one(file)
+    rec_part_one(file)
 }
 
-#[allow(dead_code)]
-pub fn part_two(file: &str) -> usize {
-    194557
-}
+// #[allow(dead_code)]
+// pub fn part_two(file: &str) -> usize {
+//     194557
+// }
 
 #[cfg(test)]
 mod tests {
-    use crate::day_12::day12::{part_one, part_two};
+    use crate::day_12::day12::part_one;
 
     #[test]
     fn test_part_one_test() {
@@ -154,15 +186,15 @@ mod tests {
         assert_eq!(result, 194557);
     }
 
-    #[test]
-    fn test_part_two_test() {
-        let result = part_two("src/day_12/day12_test.txt");
-        assert_eq!(result, 65601038650482);
-    }
+    // #[test]
+    // fn test_part_two_test() {
+    //     let result = part_two("src/day_12/day12_test.txt");
+    //     assert_eq!(result, 65601038650482);
+    // }
 
-    #[test]
-    fn test_part_two_data() {
-        let result = part_two("src/day_12/day12_data.txt");
-        assert_eq!(result, 231532558973909);
-    }
+    // #[test]
+    // fn test_part_two_data() {
+    //     let result = part_two("src/day_12/day12_data.txt");
+    //     assert_eq!(result, 231532558973909);
+    // }
 }

@@ -63,6 +63,7 @@ impl TopoMap {
     }
 
     fn walk(&mut self, pos: Point<i32>, part_two: bool) {
+        // return conditions
         let height = self.heights[&pos];
         // For part 2, ignore memos, so we find all routes even if partially duplicate
         if !part_two {
@@ -73,6 +74,7 @@ impl TopoMap {
             self.res += 1;
             return;
         }
+
         // look for next higher
         let next_height = height + 1;
         // check N, E, S, W
