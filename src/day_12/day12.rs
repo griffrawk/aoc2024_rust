@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::{fs, io};
+use std::fs;
 use std::ops::Range;
 use aocutils::point::Point;
 use colored::*;
@@ -16,7 +16,7 @@ use colored::*;
 // XX_
 // ___
 
-const CORNERS: [[Some<bool>;8];8] = [
+const CORNERS: [[Option<bool>;8];8] = [
     [Some(true), None, None, None, None, None, Some(true), Some(false)],    // int_se
     [Some(true), Some(false), Some(true), None, None, None, None, None],    // int_sw
     [None, None, Some(true), Some(false), Some(true), None, None, None],    // int_nw
@@ -25,7 +25,7 @@ const CORNERS: [[Some<bool>;8];8] = [
     [None, None, Some(false), Some(false), Some(false), None, None, None],  // ext_se
     [None, None, None, None, Some(false), Some(false), Some(false), None],  // ext_sw
     [Some(false), None, None, None, None, None, Some(false), Some(false)],  // ext_nw
-    ];
+];
 
 #[derive(Debug, Clone)]
 struct Plot {
@@ -39,7 +39,7 @@ struct Farm {
     xrange: Range<i32>,
     yrange: Range<i32>,
     current_region: usize,
-    regions: HashMap<usize, (usize, usize)>,     // k: region, v: (area, perimeter)
+    regions: HashMap<usize, (usize, usize, usize)>,     // k: region, v: (area, perimeter, length)
 }
 
 impl Farm {
@@ -60,7 +60,7 @@ impl Farm {
                 }
             }
         }
-        let regions: HashMap<usize, (usize, usize)> = HashMap::new();
+        let regions: HashMap<usize, (usize, usize, usize)> = HashMap::new();
         Self { farm, xrange: 0..max_x + 1, yrange: 0..max_y + 1, current_region: 0, regions }
     }
 
@@ -122,25 +122,50 @@ impl Farm {
 
         // Sum-up region area & perimeter
         let plot = &self.farm[&pos];
+        let corners = self.corner_finder(pos);
         self.regions.entry(plot.region.unwrap())
             .and_modify(| c | {
                 c.0 += 1;                           // Area
                 c.1 += plot_perimeter;              // Perimeter
+                c.2 += corners;                     // Corners
             })
-            .or_insert((1, plot_perimeter));
+            .or_insert((1, plot_perimeter, corners ));
     }
 
-    fn corner_finder(&self, pos: Point<i32>) -> bool {
+    fn corner_finder(&self, pos: Point<i32>) -> usize {
         // For a given Point, find if the Point is on the internal, or external
         // turn of a corner.
         // This will be done by checking the neighbours of the point and return
         // true if the patterns match various combinations
-        let neighbours = pos.compass_points();
-
-
-
-
-        true
+        let mut corners = 0;
+        let mut neighbour_matches: Vec<Option<bool>> = Vec::new();
+        for neighbour in pos.compass_points() {
+            if self.xrange.contains(&neighbour.x) && self.yrange.contains(&neighbour.y) {
+                if self.farm[&neighbour].region == self.farm[&pos].region {
+                    neighbour_matches.push(Some(true));
+                } else {
+                neighbour_matches.push(Some(false));
+                }
+            } else {
+                // out-of-bounds equates to false
+                neighbour_matches.push(Some(false));
+            }
+        }
+        for pattern in 0..8 {
+            let mut pass = 0;
+            for check in 0..8 {
+                match CORNERS[pattern][check] {
+                    Some(r) => {
+                        if r == neighbour_matches[check].unwrap() {
+                            pass += 1;
+                        }
+                    }
+                    None => pass += 1
+                }
+            }
+            if pass == 8 { corners += 1 }
+        }
+        corners
     }
 
 
@@ -188,11 +213,14 @@ impl Farm {
 }
 
 #[allow(dead_code)]
-fn part_one(file: &str) -> usize {
+fn part_one_two(file: &str) -> (usize, usize) {
     let mut farm = Farm::new(file);
     farm.find_regions();
     farm.visualise_farm();
-    farm.regions.iter().map(|(_, (area, perimeter))| area * perimeter).sum()
+    (
+        farm.regions.iter().map(|(_, (area, perimeter, _))| area * perimeter).sum(),
+        farm.regions.iter().map(|(_, (area, _, corners))| area * corners).sum()
+    )
 }
 
 // #[allow(dead_code)]
@@ -203,24 +231,47 @@ fn part_one(file: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use aocutils::point::Point;
-    use crate::day_12::day12::{part_one, Farm};
+    use crate::day_12::day12::{part_one_two, Farm};
 
+    #[test]
+    fn single_region_test() {
+        let mut farm = Farm::new("src/day_12/day12_test.txt");
+        farm.region_rec( Point { x: 6, y: 0 });
+        dbg!(&farm);
+    }
     #[test]
     fn corner_test() {
-        let farm = Farm::new("src/day_12/day12_test.txt");
-        assert!(farm.corner_finder( Point {x: 3, y: 0 }));
+        let mut farm = Farm::new("src/day_12/day12_test.txt");
+        farm.find_regions();
+        assert_eq!(farm.corner_finder( Point {x: 2, y: 0 }), 0);
+        assert_eq!(farm.corner_finder( Point {x: 3, y: 0 }), 1);
+        assert_eq!(farm.corner_finder( Point {x: 5, y: 6 }), 2);
+        assert_eq!(farm.corner_finder( Point {x: 7, y: 4 }), 4);
+        assert_eq!(farm.corner_finder( Point {x: 7, y: 9 }), 1);
+        assert_eq!(farm.corner_finder( Point {x: 3, y: 3 }), 2);
+
+        assert_eq!(farm.corner_finder( Point {x: 0, y: 0 }), 1);
+        assert_eq!(farm.corner_finder( Point {x: 9, y: 0 }), 2);
+        assert_eq!(farm.corner_finder( Point {x: 0, y: 9 }), 2);
+        assert_eq!(farm.corner_finder( Point {x: 9, y: 9 }), 1);
     }
 
     #[test]
-    fn test_part_one_test() {
-        let result = part_one("src/day_12/day12_test.txt");
-        assert_eq!(result, 1930);
+    fn test_part_one_two_test() {
+        let result = part_one_two("src/day_12/day12_test.txt");
+        assert_eq!(result, (1930, 1206));
     }
 
     #[test]
-    fn test_part_one_data() {
-        let result = part_one("src/day_12/day12_data.txt");
-        assert_eq!(result, 1449902);
+    fn test_part_one_two_test2() {
+        let result = part_one_two("src/day_12/day12_test_part2.txt");
+        assert_eq!(result, (1184, 368));
+    }
+
+    #[test]
+    fn test_part_one_two_data() {
+        let result = part_one_two("src/day_12/day12_data.txt");
+        assert_eq!(result, (1449902, 1449902));
     }
 
     // #[test]
