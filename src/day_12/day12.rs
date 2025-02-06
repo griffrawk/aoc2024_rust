@@ -7,24 +7,27 @@ use colored::*;
 // Constants for the corner check. The arrays are read L->R as N, NE, E, SE, S, SW, W, NW
 // around the pos being checked. This pos is not is the array, just the points around it.
 // Some(bool) should be matched against the compass points of the pos being examined,
-// - Some(true) is a pos in the current region
+// - Some(true) is a pos in the same region as O
 // - Some(false) is a point in a neighbour region or out-of-bounds.
-// - None if a compass point isn't needed.
+// - None if a compass point isn't needed e.g. inside the region or behind the external corner
 
-// Internal corners e.g. int_se is...
+// Internal corners e.g. int_se is (where O is pos, X is true, Y is false, _ is None) :
 // YX_
-// XX_
+// XO_
 // ___
+//
+// gives:     N,          NE,   E,    SE,   S,    SW,   W,          NW
+//           [Some(true), None, None, None, None, None, Some(true), Some(false)]
 
 const CORNERS: [[Option<bool>;8];8] = [
     [Some(true), None, None, None, None, None, Some(true), Some(false)],    // int_se
     [Some(true), Some(false), Some(true), None, None, None, None, None],    // int_sw
     [None, None, Some(true), Some(false), Some(true), None, None, None],    // int_nw
     [None, None, None, None, Some(true), Some(false), Some(true), None],    // int_ne
-    [Some(false), Some(false), Some(false), None, None, None, None, None],  // ext_ne
-    [None, None, Some(false), Some(false), Some(false), None, None, None],  // ext_se
-    [None, None, None, None, Some(false), Some(false), Some(false), None],  // ext_sw
-    [Some(false), None, None, None, None, None, Some(false), Some(false)],  // ext_nw
+    [Some(false), None, Some(false), None, None, None, None, None],         // ext_ne
+    [None, None, Some(false), None, Some(false), None, None, None],         // ext_se
+    [None, None, None, None, Some(false), None, Some(false), None],         // ext_sw
+    [Some(false), None, None, None, None, None, Some(false), None],         // ext_nw
 ];
 
 #[derive(Debug, Clone)]
@@ -39,7 +42,7 @@ struct Farm {
     xrange: Range<i32>,
     yrange: Range<i32>,
     current_region: usize,
-    regions: HashMap<usize, (usize, usize, usize)>,     // k: region, v: (area, perimeter, length)
+    regions: HashMap<usize, (usize, usize, usize, char)>,   // k: region v: (area, perimeter, corners, crop)
 }
 
 impl Farm {
@@ -60,7 +63,7 @@ impl Farm {
                 }
             }
         }
-        let regions: HashMap<usize, (usize, usize, usize)> = HashMap::new();
+        let regions: HashMap<usize, (usize, usize, usize, char)> = HashMap::new();
         Self { farm, xrange: 0..max_x + 1, yrange: 0..max_y + 1, current_region: 0, regions }
     }
 
@@ -122,23 +125,24 @@ impl Farm {
 
         // Sum-up region area & perimeter
         let plot = &self.farm[&pos];
-        let corners = self.corner_finder(pos);
+        let corners = self.corners(pos);
         self.regions.entry(plot.region.unwrap())
             .and_modify(| c | {
                 c.0 += 1;                           // Area
                 c.1 += plot_perimeter;              // Perimeter
                 c.2 += corners;                     // Corners
             })
-            .or_insert((1, plot_perimeter, corners ));
+            .or_insert((1, plot_perimeter, corners, plot.crop ));
     }
 
-    fn corner_finder(&self, pos: Point<i32>) -> usize {
+    fn corners(&self, pos: Point<i32>) -> usize {
         // For a given Point, find if the Point is on the internal, or external
         // turn of a corner.
         // This will be done by checking the neighbours of the point and return
         // true if the patterns match various combinations
         let mut corners = 0;
         let mut neighbour_matches: Vec<Option<bool>> = Vec::new();
+        // N, NE, E, SE, S, SW, W, NW
         for neighbour in pos.compass_points() {
             if self.xrange.contains(&neighbour.x) && self.yrange.contains(&neighbour.y) {
                 if self.farm[&neighbour].region == self.farm[&pos].region {
@@ -167,8 +171,6 @@ impl Farm {
         }
         corners
     }
-
-
 
     fn visualise_farm(&self) {
         // Attempt to visualise the farm as a coloured map. Unaware of the
@@ -217,16 +219,12 @@ fn part_one_two(file: &str) -> (usize, usize) {
     let mut farm = Farm::new(file);
     farm.find_regions();
     farm.visualise_farm();
+    // dbg!(&farm.regions);
     (
-        farm.regions.iter().map(|(_, (area, perimeter, _))| area * perimeter).sum(),
-        farm.regions.iter().map(|(_, (area, _, corners))| area * corners).sum()
+        farm.regions.iter().map(|(_, (area, perimeter, _, _))| area * perimeter).sum(),
+        farm.regions.iter().map(|(_, (area, _, corners, _))| area * corners).sum()
     )
 }
-
-// #[allow(dead_code)]
-// pub fn part_two(file: &str) -> usize {
-//     194557
-// }
 
 #[cfg(test)]
 mod tests {
@@ -243,46 +241,44 @@ mod tests {
     fn corner_test() {
         let mut farm = Farm::new("src/day_12/day12_test.txt");
         farm.find_regions();
-        assert_eq!(farm.corner_finder( Point {x: 2, y: 0 }), 0);
-        assert_eq!(farm.corner_finder( Point {x: 3, y: 0 }), 1);
-        assert_eq!(farm.corner_finder( Point {x: 5, y: 6 }), 2);
-        assert_eq!(farm.corner_finder( Point {x: 7, y: 4 }), 4);
-        assert_eq!(farm.corner_finder( Point {x: 7, y: 9 }), 1);
-        assert_eq!(farm.corner_finder( Point {x: 3, y: 3 }), 2);
-
-        assert_eq!(farm.corner_finder( Point {x: 0, y: 0 }), 1);
-        assert_eq!(farm.corner_finder( Point {x: 9, y: 0 }), 2);
-        assert_eq!(farm.corner_finder( Point {x: 0, y: 9 }), 2);
-        assert_eq!(farm.corner_finder( Point {x: 9, y: 9 }), 1);
+        assert_eq!(farm.corners( Point {x: 2, y: 0 }), 0);
+        assert_eq!(farm.corners( Point {x: 3, y: 0 }), 1);
+        assert_eq!(farm.corners( Point {x: 5, y: 6 }), 2);
+        assert_eq!(farm.corners( Point {x: 7, y: 4 }), 4);
+        assert_eq!(farm.corners( Point {x: 7, y: 9 }), 1);
+        assert_eq!(farm.corners( Point {x: 3, y: 3 }), 2);
+        // farm corners. sanity check both bounds
+        assert_eq!(farm.corners( Point {x: 0, y: 0 }), 1);
+        assert_eq!(farm.corners( Point {x: 9, y: 0 }), 2);
+        assert_eq!(farm.corners( Point {x: 0, y: 9 }), 2);
+        assert_eq!(farm.corners( Point {x: 9, y: 9 }), 1);
     }
 
+    // Puzzle example
     #[test]
     fn test_part_one_two_test() {
         let result = part_one_two("src/day_12/day12_test.txt");
         assert_eq!(result, (1930, 1206));
     }
 
+    // Smaller farms for edge cases
     #[test]
-    fn test_part_one_two_test2() {
-        let result = part_one_two("src/day_12/day12_test_part2.txt");
+    fn test_part_one_two_test_a() {
+        let result = part_one_two("src/day_12/day12_2_test_a.txt");
         assert_eq!(result, (1184, 368));
     }
 
+    #[test]
+    fn test_part_one_two_test_b() {
+        let result = part_one_two("src/day_12/day12_2_test_b.txt");
+        assert_eq!(result, (692, 236));
+    }
+
+    // Puzzle data
     #[test]
     fn test_part_one_two_data() {
         let result = part_one_two("src/day_12/day12_data.txt");
         assert_eq!(result, (1449902, 1449902));
     }
-
-    // #[test]
-    // fn test_part_two_test() {
-    //     let result = part_two("src/day_12/day12_test.txt");
-    //     assert_eq!(result, 65601038650482);
-    // }
-
-    // #[test]
-    // fn test_part_two_data() {
-    //     let result = part_two("src/day_12/day12_data.txt");
-    //     assert_eq!(result, 231532558973909);
-    // }
+    // 916993 too high
 }
