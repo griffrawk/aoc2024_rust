@@ -4,6 +4,29 @@ use std::ops::Range;
 use aocutils::point::Point;
 use colored::*;
 
+// Constants for the corner check. The arrays are read L->R as N, NE, E, SE, S, SW, W, NW
+// around the pos being checked. This pos is not is the array, just the points around it.
+// Some(bool) should be matched against the compass points of the pos being examined,
+// - Some(true) is a pos in the current region
+// - Some(false) is a point in a neighbour region or out-of-bounds.
+// - None if a compass point isn't needed.
+
+// Internal corners e.g. int_se is...
+// YX_
+// XX_
+// ___
+
+const CORNERS: [[Some<bool>;8];8] = [
+    [Some(true), None, None, None, None, None, Some(true), Some(false)],    // int_se
+    [Some(true), Some(false), Some(true), None, None, None, None, None],    // int_sw
+    [None, None, Some(true), Some(false), Some(true), None, None, None],    // int_nw
+    [None, None, None, None, Some(true), Some(false), Some(true), None],    // int_ne
+    [Some(false), Some(false), Some(false), None, None, None, None, None],  // ext_ne
+    [None, None, Some(false), Some(false), Some(false), None, None, None],  // ext_se
+    [None, None, None, None, Some(false), Some(false), Some(false), None],  // ext_sw
+    [Some(false), None, None, None, None, None, Some(false), Some(false)],  // ext_nw
+    ];
+
 #[derive(Debug, Clone)]
 struct Plot {
     region: Option<usize>,
@@ -63,7 +86,7 @@ impl Farm {
         // Assume a standalone crop has perimeter = 4
         let mut plot_perimeter = 4;
         // Always use new region. If plot has neighbours that will
-        // be overwritten later. This deals with regions of one.
+        // be overwritten later. This provides a default for regions of one plot.
         self.farm.entry(pos)
             .and_modify(|p| p.region = Some(self.current_region));
 
@@ -106,6 +129,21 @@ impl Farm {
             })
             .or_insert((1, plot_perimeter));
     }
+
+    fn corner_finder(&self, pos: Point<i32>) -> bool {
+        // For a given Point, find if the Point is on the internal, or external
+        // turn of a corner.
+        // This will be done by checking the neighbours of the point and return
+        // true if the patterns match various combinations
+        let neighbours = pos.compass_points();
+
+
+
+
+        true
+    }
+
+
 
     fn visualise_farm(&self) {
         // Attempt to visualise the farm as a coloured map. Unaware of the
@@ -164,7 +202,14 @@ fn part_one(file: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_12::day12::part_one;
+    use aocutils::point::Point;
+    use crate::day_12::day12::{part_one, Farm};
+
+    #[test]
+    fn corner_test() {
+        let farm = Farm::new("src/day_12/day12_test.txt");
+        assert!(farm.corner_finder( Point {x: 3, y: 0 }));
+    }
 
     #[test]
     fn test_part_one_test() {
