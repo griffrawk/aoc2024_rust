@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs;
+use std::{fs, io};
 use std::ops::Range;
 use aocutils::point::Point;
 use colored::*;
@@ -67,6 +67,11 @@ impl Farm {
         self.farm.entry(pos)
             .and_modify(|p| p.region = Some(self.current_region));
 
+        // todo use visualiser here for a frame-by-frame
+        //  but need a way of animating the text output
+        //  might need to be something animatable...
+        // self.visualise_farm();
+
         // Does plot have neighbours of same crop?
         for neigbour_pos in pos.cardinal_points() {
             if self.xrange.contains(&neigbour_pos.x) && self.yrange.contains(&neigbour_pos.y) {
@@ -91,6 +96,7 @@ impl Farm {
             }
         }
         // Post-processing
+
         // Sum-up region area & perimeter
         let plot = &self.farm[&pos];
         self.regions.entry(plot.region.unwrap())
@@ -139,7 +145,7 @@ impl Farm {
             }
             println!();
         }
-
+        println!();
     }
 }
 
