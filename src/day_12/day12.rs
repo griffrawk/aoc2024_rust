@@ -75,6 +75,8 @@ impl Farm {
                 // Exhausted region possibilities of pos, so increment region
                 self.current_region += 1;
             }
+            // Just do one region
+            // break;
         }
     }
 
@@ -125,14 +127,16 @@ impl Farm {
 
         // Sum-up region area & perimeter
         let plot = &self.farm[&pos];
+
+        // not here. regions are incomplete. needs a separate recursive run
         let corners = self.corners(pos);
+
         self.regions.entry(plot.region.unwrap())
             .and_modify(| c | {
                 c.0 += 1;                           // Area
                 c.1 += plot_perimeter;              // Perimeter
-                c.2 += corners;                     // Corners
             })
-            .or_insert((1, plot_perimeter, corners, plot.crop ));
+            .or_insert((1, plot_perimeter, 0, plot.crop ));
     }
 
     fn corners(&self, pos: Point<i32>) -> usize {
@@ -148,7 +152,7 @@ impl Farm {
                 if self.farm[&neighbour].region == self.farm[&pos].region {
                     neighbour_matches.push(Some(true));
                 } else {
-                neighbour_matches.push(Some(false));
+                    neighbour_matches.push(Some(false));
                 }
             } else {
                 // out-of-bounds equates to false
@@ -219,7 +223,7 @@ fn part_one_two(file: &str) -> (usize, usize) {
     let mut farm = Farm::new(file);
     farm.find_regions();
     farm.visualise_farm();
-    // dbg!(&farm.regions);
+    dbg!(&farm.regions);
     (
         farm.regions.iter().map(|(_, (area, perimeter, _, _))| area * perimeter).sum(),
         farm.regions.iter().map(|(_, (area, _, corners, _))| area * corners).sum()
