@@ -1,8 +1,8 @@
+use aocutils::point::Point;
+use colored::*;
 use std::collections::HashMap;
 use std::fs;
 use std::ops::Range;
-use aocutils::point::Point;
-use colored::*;
 
 // Constants for the corner check. The arrays are read L->R as N, NE, E, SE, S, SW, W, NW
 // around the pos being checked. This pos is not is the array, just the points around it.
@@ -19,15 +19,15 @@ use colored::*;
 // gives:     N,          NE,   E,    SE,   S,    SW,   W,          NW
 //           [Some(true), None, None, None, None, None, Some(true), Some(false)]
 
-const CORNERS: [[Option<bool>;8];8] = [
-    [Some(true), None, None, None, None, None, Some(true), Some(false)],    // int_se
-    [Some(true), Some(false), Some(true), None, None, None, None, None],    // int_sw
-    [None, None, Some(true), Some(false), Some(true), None, None, None],    // int_nw
-    [None, None, None, None, Some(true), Some(false), Some(true), None],    // int_ne
-    [Some(false), None, Some(false), None, None, None, None, None],         // ext_ne
-    [None, None, Some(false), None, Some(false), None, None, None],         // ext_se
-    [None, None, None, None, Some(false), None, Some(false), None],         // ext_sw
-    [Some(false), None, None, None, None, None, Some(false), None],         // ext_nw
+const CORNERS: [[Option<bool>; 8]; 8] = [
+    [Some(true), None, None, None, None, None, Some(true), Some(false), ], // int_se
+    [Some(true), Some(false), Some(true), None, None, None, None, None, ], // int_sw
+    [None, None, Some(true), Some(false), Some(true), None, None, None, ], // int_nw
+    [None, None, None, None, Some(true), Some(false), Some(true), None, ], // int_ne
+    [Some(false), None, Some(false), None, None, None, None, None], // ext_ne
+    [None, None, Some(false), None, Some(false), None, None, None], // ext_se
+    [None, None, None, None, Some(false), None, Some(false), None], // ext_sw
+    [Some(false), None, None, None, None, None, Some(false), None], // ext_nw
 ];
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ struct Farm {
     xrange: Range<i32>,
     yrange: Range<i32>,
     current_region: usize,
-    regions: HashMap<usize, (usize, usize, usize, char)>,   // k: region v: (area, perimeter, corners, crop)
+    regions: HashMap<usize, (usize, usize, usize, char)>, // k: region v: (area, perimeter, corners, crop)
 }
 
 impl Farm {
@@ -51,20 +51,36 @@ impl Farm {
         let mut farm: HashMap<Point<i32>, Plot> = HashMap::new();
         let mut max_x = 0;
         let mut max_y = 0;
-        for (y, line) in  fs::read_to_string(file)
+        for (y, line) in fs::read_to_string(file)
             .expect("Can't read the file")
             .lines()
-            .enumerate() {
+            .enumerate()
+        {
             max_y = y as i32;
             for (x, c) in line.chars().enumerate() {
                 max_x = x as i32;
                 if c.is_ascii_alphanumeric() {
-                    farm.insert(Point { x: x as i32, y: y as i32 }, Plot { region: None, crop: c });
+                    farm.insert(
+                        Point {
+                            x: x as i32,
+                            y: y as i32,
+                        },
+                        Plot {
+                            region: None,
+                            crop: c,
+                        },
+                    );
                 }
             }
         }
         let regions: HashMap<usize, (usize, usize, usize, char)> = HashMap::new();
-        Self { farm, xrange: 0..max_x + 1, yrange: 0..max_y + 1, current_region: 0, regions }
+        Self {
+            farm,
+            xrange: 0..max_x + 1,
+            yrange: 0..max_y + 1,
+            current_region: 0,
+            regions,
+        }
     }
 
     fn find_regions(&mut self) {
@@ -84,7 +100,7 @@ impl Farm {
         // Return conditions
         let plot = self.farm[&pos].clone();
         if let Some(_) = plot.region {
-            return
+            return;
         }
 
         // Process plot to find its region, and sum-up the region's area & perimeter
@@ -92,7 +108,8 @@ impl Farm {
         let mut plot_perimeter = 4;
         // Always use new region. If plot has neighbours that will
         // be overwritten later. This provides a default for regions of one plot.
-        self.farm.entry(pos)
+        self.farm
+            .entry(pos)
             .and_modify(|p| p.region = Some(self.current_region));
 
         // todo use visualiser here for a frame-by-frame
@@ -112,8 +129,7 @@ impl Farm {
                     match neighbour_plot.region {
                         Some(r) => {
                             // Set plot region to same as neighbour
-                            self.farm.entry(pos)
-                                .and_modify(|p| p.region = Some(r));
+                            self.farm.entry(pos).and_modify(|p| p.region = Some(r));
                         }
                         None => {
                             // Neighbour doesn't have a region, visit recursively
@@ -128,17 +144,25 @@ impl Farm {
         // Sum-up region area & perimeter
         let plot = &self.farm[&pos];
 
-        // not here. regions are incomplete. needs a separate recursive run
-        let corners = self.corners(pos);
-
-        self.regions.entry(plot.region.unwrap())
-            .and_modify(| c | {
-                c.0 += 1;                           // Area
-                c.1 += plot_perimeter;              // Perimeter
+        self.regions
+            .entry(plot.region.unwrap())
+            .and_modify(|c| {
+                c.0 += 1; // Area
+                c.1 += plot_perimeter; // Perimeter
             })
-            .or_insert((1, plot_perimeter, 0, plot.crop ));
+            .or_insert((1, plot_perimeter, 0, plot.crop));
     }
 
+    fn find_corners(&mut self) {
+        // find corners for the sides
+        for (pos, _) in self.farm.clone() {
+            let corners = self.corners(pos);
+            let plot = &self.farm[&pos];
+            self.regions.entry(plot.region.unwrap()).and_modify(|c| {
+                c.2 += corners;
+            });
+        }
+    }
     fn corners(&self, pos: Point<i32>) -> usize {
         // For a given Point, find if the Point is on the internal, or external
         // turn of a corner.
@@ -168,10 +192,12 @@ impl Farm {
                             pass += 1;
                         }
                     }
-                    None => pass += 1
+                    None => pass += 1,
                 }
             }
-            if pass == 8 { corners += 1 }
+            if pass == 8 {
+                corners += 1
+            }
         }
         corners
     }
@@ -207,7 +233,7 @@ impl Farm {
                     match r % 3 {
                         0 => cstring.style = italic.style,
                         1 => cstring.style = bold.style,
-                        _ => ()
+                        _ => (),
                     }
                 }
                 print!("{}", cstring);
@@ -223,39 +249,45 @@ fn part_one_two(file: &str) -> (usize, usize) {
     let mut farm = Farm::new(file);
     farm.find_regions();
     farm.visualise_farm();
-    dbg!(&farm.regions);
+    farm.find_corners();
     (
-        farm.regions.iter().map(|(_, (area, perimeter, _, _))| area * perimeter).sum(),
-        farm.regions.iter().map(|(_, (area, _, corners, _))| area * corners).sum()
+        farm.regions
+            .iter()
+            .map(|(_, (area, perimeter, _, _))| area * perimeter)
+            .sum(),
+        farm.regions
+            .iter()
+            .map(|(_, (area, _, corners, _))| area * corners)
+            .sum(),
     )
 }
 
 #[cfg(test)]
 mod tests {
-    use aocutils::point::Point;
     use crate::day_12::day12::{part_one_two, Farm};
+    use aocutils::point::Point;
 
     #[test]
     fn single_region_test() {
         let mut farm = Farm::new("src/day_12/day12_test.txt");
-        farm.region_rec( Point { x: 6, y: 0 });
+        farm.region_rec(Point { x: 6, y: 0 });
         dbg!(&farm);
     }
     #[test]
     fn corner_test() {
         let mut farm = Farm::new("src/day_12/day12_test.txt");
         farm.find_regions();
-        assert_eq!(farm.corners( Point {x: 2, y: 0 }), 0);
-        assert_eq!(farm.corners( Point {x: 3, y: 0 }), 1);
-        assert_eq!(farm.corners( Point {x: 5, y: 6 }), 2);
-        assert_eq!(farm.corners( Point {x: 7, y: 4 }), 4);
-        assert_eq!(farm.corners( Point {x: 7, y: 9 }), 1);
-        assert_eq!(farm.corners( Point {x: 3, y: 3 }), 2);
+        assert_eq!(farm.corners(Point { x: 2, y: 0 }), 0);
+        assert_eq!(farm.corners(Point { x: 3, y: 0 }), 1);
+        assert_eq!(farm.corners(Point { x: 5, y: 6 }), 2);
+        assert_eq!(farm.corners(Point { x: 7, y: 4 }), 4);
+        assert_eq!(farm.corners(Point { x: 7, y: 9 }), 1);
+        assert_eq!(farm.corners(Point { x: 3, y: 3 }), 2);
         // farm corners. sanity check both bounds
-        assert_eq!(farm.corners( Point {x: 0, y: 0 }), 1);
-        assert_eq!(farm.corners( Point {x: 9, y: 0 }), 2);
-        assert_eq!(farm.corners( Point {x: 0, y: 9 }), 2);
-        assert_eq!(farm.corners( Point {x: 9, y: 9 }), 1);
+        assert_eq!(farm.corners(Point { x: 0, y: 0 }), 1);
+        assert_eq!(farm.corners(Point { x: 9, y: 0 }), 2);
+        assert_eq!(farm.corners(Point { x: 0, y: 9 }), 2);
+        assert_eq!(farm.corners(Point { x: 9, y: 9 }), 1);
     }
 
     // Puzzle example
@@ -282,7 +314,7 @@ mod tests {
     #[test]
     fn test_part_one_two_data() {
         let result = part_one_two("src/day_12/day12_data.txt");
-        assert_eq!(result, (1449902, 1449902));
+        assert_eq!(result, (1449902, 908042));
     }
     // 916993 too high
 }
