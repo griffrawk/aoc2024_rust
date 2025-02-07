@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::ops::Range;
 
+// Corner checking
+// ---------------
 // Constants for the corner check. The arrays are read L->R as N, NE, E, SE, S, SW, W, NW
 // around the pos being checked. This pos is not is the array, just the points around it.
 // Some(bool) should be matched against the compass points of the pos being examined,
@@ -11,13 +13,33 @@ use std::ops::Range;
 // - Some(false) is a point in a neighbour region or out-of-bounds.
 // - None if a compass point isn't needed e.g. inside the region or behind the external corner
 
-// Internal corners e.g. int_se is (where O is pos, X is true, Y is false, _ is None) :
-// YX_
-// XO_
+// Internal corners e.g. int_se is :
+// FT_
+// TO_
 // ___
 //
 // gives:     N,          NE,   E,    SE,   S,    SW,   W,          NW
 //           [Some(true), None, None, None, None, None, Some(true), Some(false)]
+
+// External corners require some more care, where members of the same region touch diagonally
+// e.g. A region encloses B regions. For an ext_se check for A at 2,2 it has to ignore
+// the A at 3,3 and just detect Some(false) for the B's at 2,3 and 3,2, otherwise it
+// misses the corner.
+//
+// AAAAAA
+// AAABBA
+// AAABBA
+// ABBAAA
+// ABBAAA
+// AAAAAA
+
+// So... External corners e.g. ext_se is :
+// ___
+// _OF
+// _F_
+//
+// gives:     N,    NE,   E,           SE,   S,           SW,   W,    NW
+//           [None, None, Some(false), None, Some(false), None, None, None]
 
 const CORNERS: [[Option<bool>; 8]; 8] = [
     [Some(true), None, None, None, None, None, Some(true), Some(false), ], // int_se
@@ -91,8 +113,6 @@ impl Farm {
                 // Exhausted region possibilities of pos, so increment region
                 self.current_region += 1;
             }
-            // Just do one region
-            // break;
         }
     }
 
@@ -168,9 +188,13 @@ impl Farm {
         // turn of a corner.
         // This will be done by checking the neighbours of the point and return
         // true if the patterns match various combinations
+        // A pos can have 0, 1, 2 or 4 corners
         let mut corners = 0;
         let mut neighbour_matches: Vec<Option<bool>> = Vec::new();
         // N, NE, E, SE, S, SW, W, NW
+        // Make a view of the compass points around pos
+        // Some(true) for same region
+        // Some(false) for different region, or out-of-bounds
         for neighbour in pos.compass_points() {
             if self.xrange.contains(&neighbour.x) && self.yrange.contains(&neighbour.y) {
                 if self.farm[&neighbour].region == self.farm[&pos].region {
@@ -183,6 +207,9 @@ impl Farm {
                 neighbour_matches.push(Some(false));
             }
         }
+        // Now compare each CORNERS pattern check with the view of pos
+        // If pattern check has a None, that neighbour is passed
+        // If pattern gets to pass == 8, the pos has a corner
         for pattern in 0..8 {
             let mut pass = 0;
             for check in 0..8 {
@@ -206,7 +233,7 @@ impl Farm {
         // Attempt to visualise the farm as a coloured map. Unaware of the
         // 4-colour problem, it can output regions with touching similar colours
         // 36 combinations aren't enough it seems...
-        let colours = vec![
+        let colours = [
             Color::Red,
             Color::Green,
             Color::Yellow,
