@@ -42,10 +42,10 @@ use std::ops::Range;
 //           [None, None, Some(false), None, Some(false), None, None, None]
 
 const CORNERS: [[Option<bool>; 8]; 8] = [
+    [None, None, None, None, Some(true), Some(false), Some(true), None, ], // int_ne
     [Some(true), None, None, None, None, None, Some(true), Some(false), ], // int_se
     [Some(true), Some(false), Some(true), None, None, None, None, None, ], // int_sw
     [None, None, Some(true), Some(false), Some(true), None, None, None, ], // int_nw
-    [None, None, None, None, Some(true), Some(false), Some(true), None, ], // int_ne
     [Some(false), None, Some(false), None, None, None, None, None], // ext_ne
     [None, None, Some(false), None, Some(false), None, None, None], // ext_se
     [None, None, None, None, Some(false), None, Some(false), None], // ext_sw
