@@ -8,7 +8,7 @@ fn claw(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
     // '...no more than 100 times to win a prize. How else would someone be expected to play?'
     // plus 1 to offset initial decrement
     let mut a_presses = 0;
-    let mut b_presses = min(101, (prize_x / xb).abs());
+    let mut b_presses = min(100, (prize_x / xb).abs()) + 1;
     let mut px = 0;
     let mut py = 0;
 
