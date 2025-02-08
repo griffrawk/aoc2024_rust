@@ -45,7 +45,7 @@ mod tests {
     use crate::day_13::day13::{claw, part_one};
 
     #[test]
-    fn game_test() {
+    fn claw_test() {
         // 280
         let xa = 94;
         let xb = 22;
