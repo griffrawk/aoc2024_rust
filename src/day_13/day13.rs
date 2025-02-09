@@ -1,5 +1,6 @@
 use std::cmp::min;
 use std::fs;
+use regex::Regex;
 
 #[allow(dead_code)]
 fn claw(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
@@ -34,10 +35,36 @@ fn claw(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
 
 fn part_one(file: &str) -> i32 {
     let mut res = 0;
-    // todo - the parsing, as always...
+    let mut xa = 0;
+    let mut ya = 0;
+    let mut xb = 0;
+    let mut yb = 0;
+    let mut prize_x = 0;
+    let mut prize_y = 0;
 
-
-    480
+    // todo -
+    let contents = fs::read_to_string(file).expect("Can't read the file");
+    for line in contents.lines() {
+        if line.contains("Button A:") {
+            let i: Vec<&str> = line.split(|c| "+,".contains(c)).collect();
+            xa = i[1].parse().unwrap();
+            ya = i[3].parse().unwrap();
+            continue;
+        }
+        if line.contains("Button B:") {
+            let i: Vec<&str> = line.split(|c| "+,".contains(c)).collect();
+            xb = i[1].parse().unwrap();
+            yb = i[3].parse().unwrap();
+            continue;
+        }
+        if line.contains("Prize:") {
+            let i: Vec<&str> = line.split(|c| "=,".contains(c)).collect();
+            prize_x = i[1].parse().unwrap();
+            prize_y = i[3].parse().unwrap();
+            res += claw(xa, xb, ya, yb, prize_x, prize_y);
+        }
+    }
+    res
 }
 
 #[cfg(test)]
@@ -84,9 +111,15 @@ mod tests {
     }
 
     #[test]
-    fn test_part_one() {
+    fn test_part_one_test() {
         let result = part_one("src/day_13/day13_test.txt");
         assert_eq!(result, 480);
+    }
+
+    #[test]
+    fn test_part_one_data() {
+        let result = part_one("src/day_13/day13_data.txt");
+        assert_eq!(result, 29598);
     }
 
 }
