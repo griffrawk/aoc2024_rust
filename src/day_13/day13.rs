@@ -1,9 +1,9 @@
 use std::cmp::min;
 use std::fs;
-use regex::Regex;
+use aocutils::divisors::gcd;
 
 #[allow(dead_code)]
-fn claw(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
+fn claw_part_one(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
     // As pressing B is cheaper, maximise that at start. How many B presses will
     // get the claw *nearly* there?
     // '...no more than 100 times to win a prize. How else would someone be expected to play?'
@@ -30,10 +30,22 @@ fn claw(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
         py = a_presses * ya + b_presses * yb;
     }
     // return token cost
+    dbg!(a_presses, b_presses);
     a_presses * 3 + b_presses
 }
+fn claw_part_two(ax: i64, bx: i64, ay: i64, by: i64, px: i64, py: i64) -> i64 {
+    // Cramer's Rule https://en.wikipedia.org/wiki/Cramer%27s_rule
+    // See cramers_rule.md
+    let a_presses = (px * by - py * bx) / (ax * by - ay * bx);
+    let b_presses = (ax * py - ay * px) / (ax * by - ay * bx);
+    if a_presses * ax + b_presses * bx == px && a_presses * ay + b_presses * by == py {
+        a_presses * 3 + b_presses
+    } else {
+        0
+    }
+}
 
-fn part_one(file: &str) -> i32 {
+fn part_one(file: &str) -> i64 {
     let mut res = 0;
     let mut xa = 0;
     let mut ya = 0;
@@ -42,7 +54,6 @@ fn part_one(file: &str) -> i32 {
     let mut prize_x = 0;
     let mut prize_y = 0;
 
-    // todo -
     let contents = fs::read_to_string(file).expect("Can't read the file");
     for line in contents.lines() {
         if line.contains("Button A:") {
@@ -61,7 +72,42 @@ fn part_one(file: &str) -> i32 {
             let i: Vec<&str> = line.split(|c| "=,".contains(c)).collect();
             prize_x = i[1].parse().unwrap();
             prize_y = i[3].parse().unwrap();
-            res += claw(xa, xb, ya, yb, prize_x, prize_y);
+
+            // use the matrix for both
+            res += claw_part_two(xa, xb, ya, yb, prize_x, prize_y);
+        }
+    }
+    res
+}
+
+fn part_two (file: &str) -> i64 {
+    let mut res = 0;
+    let mut xa = 0;
+    let mut ya = 0;
+    let mut xb = 0;
+    let mut yb = 0;
+    let mut prize_x = 0;
+    let mut prize_y = 0;
+
+    let contents = fs::read_to_string(file).expect("Can't read the file");
+    for line in contents.lines() {
+        if line.contains("Button A:") {
+            let i: Vec<&str> = line.split(|c| "+,".contains(c)).collect();
+            xa = i[1].parse().unwrap();
+            ya = i[3].parse().unwrap();
+            continue;
+        }
+        if line.contains("Button B:") {
+            let i: Vec<&str> = line.split(|c| "+,".contains(c)).collect();
+            xb = i[1].parse().unwrap();
+            yb = i[3].parse().unwrap();
+            continue;
+        }
+        if line.contains("Prize:") {
+            let i: Vec<&str> = line.split(|c| "=,".contains(c)).collect();
+            prize_x = i[1].parse::<i64>().unwrap() + 10000000000000;
+            prize_y = i[3].parse::<i64>().unwrap() + 10000000000000;
+            res += claw_part_two(xa, xb, ya, yb, prize_x, prize_y);
         }
     }
     res
@@ -69,7 +115,7 @@ fn part_one(file: &str) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_13::day13::{claw, part_one};
+    use crate::day_13::day13::{claw_part_one, part_one, part_two};
 
     #[test]
     fn claw_test() {
@@ -80,7 +126,7 @@ mod tests {
         let ya = 34;
         let yb = 67;
         let prize_y = 5400;
-        assert_eq!(claw(xa, xb, ya, yb, prize_x, prize_y), 280);
+        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 280);
 
         // 0
         let xa = 26;
@@ -89,7 +135,7 @@ mod tests {
         let ya = 66;
         let yb = 21;
         let prize_y = 12176;
-        assert_eq!(claw(xa, xb, ya, yb, prize_x, prize_y), 0);
+        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 0);
 
         // 200
         let xa = 17;
@@ -98,7 +144,7 @@ mod tests {
         let ya = 86;
         let yb = 37;
         let prize_y = 6450;
-        assert_eq!(claw(xa, xb, ya, yb, prize_x, prize_y), 200);
+        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 200);
 
         // 0
         let xa = 69;
@@ -107,7 +153,7 @@ mod tests {
         let ya = 23;
         let yb = 71;
         let prize_y = 10279;
-        assert_eq!(claw(xa, xb, ya, yb, prize_x, prize_y), 0);
+        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 0);
     }
 
     #[test]
@@ -117,9 +163,21 @@ mod tests {
     }
 
     #[test]
+    fn test_part_two_test() {
+        let result = part_two("src/day_13/day13_test.txt");
+        assert_eq!(result, 875318608908);
+    }
+
+    #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_13/day13_data.txt");
         assert_eq!(result, 29598);
+    }
+
+    #[test]
+    fn test_part_two_data() {
+        let result = part_two("src/day_13/day13_data.txt");
+        assert_eq!(result, 93217456941970);
     }
 
 }
