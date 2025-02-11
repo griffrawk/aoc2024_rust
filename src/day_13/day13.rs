@@ -1,9 +1,9 @@
 use std::cmp::min;
 use std::fs;
-use aocutils::divisors::gcd;
 
 #[allow(dead_code)]
 fn claw_part_one(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32) -> i32 {
+    // Dynamic Programming approach:
     // As pressing B is cheaper, maximise that at start. How many B presses will
     // get the claw *nearly* there?
     // '...no more than 100 times to win a prize. How else would someone be expected to play?'
@@ -30,10 +30,10 @@ fn claw_part_one(xa: i32, xb: i32, ya: i32, yb: i32, prize_x: i32, prize_y: i32)
         py = a_presses * ya + b_presses * yb;
     }
     // return token cost
-    dbg!(a_presses, b_presses);
     a_presses * 3 + b_presses
 }
 fn claw_part_two(ax: i64, bx: i64, ay: i64, by: i64, px: i64, py: i64) -> i64 {
+    // Linear algebra approach:
     // Cramer's Rule https://en.wikipedia.org/wiki/Cramer%27s_rule
     // See cramers_rule.md
     let a_presses = (px * by - py * bx) / (ax * by - ay * bx);
@@ -73,7 +73,6 @@ fn part_one(file: &str) -> i64 {
             prize_x = i[1].parse().unwrap();
             prize_y = i[3].parse().unwrap();
 
-            // use the matrix for both
             res += claw_part_two(xa, xb, ya, yb, prize_x, prize_y);
         }
     }
@@ -115,27 +114,27 @@ fn part_two (file: &str) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::day_13::day13::{claw_part_one, part_one, part_two};
+    use crate::day_13::day13::{claw_part_one, claw_part_two, part_one, part_two};
 
     #[test]
     fn claw_test() {
         // 280
         let xa = 94;
         let xb = 22;
-        let prize_x: i32 = 8400;
+        let prize_x = 8400;
         let ya = 34;
         let yb = 67;
         let prize_y = 5400;
-        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 280);
+        assert_eq!(claw_part_two(xa, xb, ya, yb, prize_x, prize_y), 280);
 
         // 0
         let xa = 26;
         let xb = 67;
-        let prize_x: i32 = 12748;
+        let prize_x= 12748;
         let ya = 66;
         let yb = 21;
         let prize_y = 12176;
-        assert_eq!(claw_part_one(xa, xb, ya, yb, prize_x, prize_y), 0);
+        assert_eq!(claw_part_two(xa, xb, ya, yb, prize_x, prize_y), 0);
 
         // 200
         let xa = 17;
