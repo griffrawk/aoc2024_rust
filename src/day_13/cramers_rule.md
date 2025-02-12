@@ -1,3 +1,4 @@
+From: 
 https://www.reddit.com/r/adventofcode/comments/1hd7irq/2024_day_13_an_explanation_of_the_mathematics/
 
 # [2024 Day 13] An explanation of the mathematics
