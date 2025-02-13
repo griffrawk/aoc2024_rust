@@ -104,7 +104,7 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
     }
 
     for t in 0..8160 {
-        let mut plot = vec![vec![' '; max_x as usize]; max_y as usize];
+        // let mut plot = vec![vec![' '; max_x as usize]; max_y as usize];
         let mut ul = 0;
         let mut ur = 0;
         let mut ll = 0;
