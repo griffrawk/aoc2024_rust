@@ -50,6 +50,56 @@ impl Warehouse {
         }
         Warehouse { robot, locations, instructions }
     }
+
+    fn move_robot(&mut self) {
+        for instruction in self.instructions.clone().chars() {
+            // calc proposed robot position
+            let mut proposed_robot_move = self.robot.pos;
+            match instruction {
+                '^' => proposed_robot_move.y -= 1,
+                '>' => proposed_robot_move.x += 1,
+                'v' => proposed_robot_move.y += 1,
+                '<' => proposed_robot_move.x -= 1,
+                _ => ()
+            }
+
+            // might be able to collapse most of this into the rec fn
+            // check for walls or boxes
+            match self.locations.entry(proposed_robot_move) {
+                std::collections::hash_map::Entry::Occupied(entry) => {
+                    match *entry.get() {
+                        // if wall { cannot move } (match arm might be redundant)
+                        '#' => (),
+                        // if box { check if box can move, move if yes}
+                        'O' => {
+                            if self.move_box(proposed_robot_move) {
+                                self.robot.pos = proposed_robot_move;
+                            };
+                        },
+                        _ => (),
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    // if free { move robot }
+                    self.robot.pos = proposed_robot_move;
+                }
+
+            }
+        }
+
+    }
+
+    fn move_box(&mut self, proposed_move: Point<usize>,) -> bool{
+
+        // exit conditions?
+
+        // check for walls or boxes
+        // if free { move box }
+        // if wall { cannot move}
+        // if box { rec check if box can move, move if yes }
+
+        false
+    }
 }
 
 fn part_one(file: &str) -> usize {
