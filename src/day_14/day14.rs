@@ -103,7 +103,7 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
         hall.push(Robot { pos: Point { x: *x, y: *y }, dx: *dx, dy: *dy });
     }
 
-    for t in 8150..8160 {
+    for t in 0..8160 {
         let mut plot = vec![vec![' '; max_x as usize]; max_y as usize];
         let mut ul = 0;
         let mut ur = 0;
@@ -111,7 +111,7 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
         let mut lr = 0;
         for robot in hall.clone() {
             let pos = robot_pos(robot, max_x, max_y, t);
-            plot[pos.y as usize][pos.x as usize] = '*';
+            // plot[pos.y as usize][pos.x as usize] = '*';
 
             if left_x.contains(&pos.x) && upper_y.contains(&pos.y) {
                 ul += 1;
@@ -124,24 +124,24 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
             }
         }
         // plot it anyway
-        let bar = "-".repeat(max_y as usize).blue();
-        println!("{}", bar);
-        for (y, line) in plot.iter().enumerate() {
-            print!("{}", "|".blue());
-            for (x, r ) in line.iter().enumerate() {
-                if x as i32 == (max_x / 2).abs() || y as i32 == (max_y / 2).abs() {
-                    // centre line
-                    print!("{}", r.to_string().red());
-                } else {
-                    print!("{}", r.to_string().bright_green());
-                }
-            }
-            println!("{}", "|".blue());
-        }
-        println!("{}", bar);
+        // let bar = "-".repeat(max_y as usize).blue();
+        // println!("{}", bar);
+        // for (y, line) in plot.iter().enumerate() {
+        //     print!("{}", "|".blue());
+        //     for (x, r ) in line.iter().enumerate() {
+        //         if x as i32 == (max_x / 2).abs() || y as i32 == (max_y / 2).abs() {
+        //             centre line
+        //             print!("{}", r.to_string().red());
+        //         } else {
+        //             print!("{}", r.to_string().bright_green());
+        //         }
+        //     }
+        //     println!("{}", "|".blue());
+        // }
+        // println!("{}", bar);
 
         let m = ul * ur * ll * lr;
-        println!("At t = {}, safety factor = {}\n\n", t, m);
+        // println!("At t = {}, safety factor = {}\n\n", t, m);
 
         if m < min_q {
             min_q = m;
