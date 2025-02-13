@@ -1,4 +1,3 @@
-use itertools::max;
 use regex::Regex;
 use std::fs;
 use colored::Colorize;
