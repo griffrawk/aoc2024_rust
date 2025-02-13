@@ -1,8 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs;
-use std::ops::Add;
-use colored::Colorize;
 use aocutils::point::Point;
 
 #[derive(Debug, Clone, Default)]
