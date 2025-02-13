@@ -38,18 +38,15 @@ fn part_one(file: &str, max_x: i32, max_y: i32) -> i32 {
             .unwrap();
         // Do sums. A Rust gotcha. % in Rust is remainder, not modulo like in Python
         // a.rem_euclid(b) does what you'd expect instead.
-        let nx = (*x + (*dx * 100)).rem_euclid(max_x);
-        let ny = (*y + (*dy * 100)).rem_euclid(max_y);
+        let nx = (x + (dx * 100)).rem_euclid(max_x);
+        let ny = (y + (dy * 100)).rem_euclid(max_y);
         if left_x.contains(&nx) && upper_y.contains(&ny) {
             ul += 1;
-        }
-        if right_x.contains(&nx) && upper_y.contains(&ny) {
+        } else if right_x.contains(&nx) && upper_y.contains(&ny) {
             ur += 1;
-        }
-        if left_x.contains(&nx) && lower_y.contains(&ny) {
+        } else if left_x.contains(&nx) && lower_y.contains(&ny) {
             ll += 1;
-        }
-        if right_x.contains(&nx) && lower_y.contains(&ny) {
+        } else if right_x.contains(&nx) && lower_y.contains(&ny) {
             lr += 1;
         }
     }
