@@ -110,16 +110,16 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
         let mut ll = 0;
         let mut lr = 0;
         for robot in hall.clone() {
-            let (nx, ny) = robot_pos(robot, max_x, max_y, t);
-            plot[ny as usize][nx as usize] = '*';
+            let pos = robot_pos(robot, max_x, max_y, t);
+            plot[pos.y as usize][pos.x as usize] = '*';
 
-            if left_x.contains(&nx) && upper_y.contains(&ny) {
+            if left_x.contains(&pos.x) && upper_y.contains(&pos.y) {
                 ul += 1;
-            } else if right_x.contains(&nx) && upper_y.contains(&ny) {
+            } else if right_x.contains(&pos.x) && upper_y.contains(&pos.y) {
                 ur += 1;
-            } else if left_x.contains(&nx) && lower_y.contains(&ny) {
+            } else if left_x.contains(&pos.x) && lower_y.contains(&pos.y) {
                 ll += 1;
-            } else if right_x.contains(&nx) && lower_y.contains(&ny) {
+            } else if right_x.contains(&pos.x) && lower_y.contains(&pos.y) {
                 lr += 1;
             }
         }
@@ -128,11 +128,12 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
         println!("{}", bar);
         for (y, line) in plot.iter().enumerate() {
             print!("{}", "|".blue());
-            for (x, r ) in line.into_iter().enumerate() {
+            for (x, r ) in line.iter().enumerate() {
                 if x as i32 == (max_x / 2).abs() || y as i32 == (max_y / 2).abs() {
+                    // centre line
                     print!("{}", r.to_string().red());
                 } else {
-                    print!("{}", r);
+                    print!("{}", r.to_string().bright_green());
                 }
             }
             println!("{}", "|".blue());
@@ -152,10 +153,10 @@ fn part_two(file: &str, max_x: i32, max_y: i32) -> i32 {
     t_at_min
 }
 
-fn robot_pos(robot: Robot, max_x: i32, max_y: i32, t: i32) -> (i32, i32) {
-    let nx = (robot.pos.x + (robot.dx * t)).rem_euclid(max_x);
-    let ny = (robot.pos.y + (robot.dy * t)).rem_euclid(max_y);
-    (nx, ny)
+fn robot_pos(robot: Robot, max_x: i32, max_y: i32, t: i32) -> Point<i32> {
+    // Robot's position after t seconds
+    Point { x: (robot.pos.x + (robot.dx * t)).rem_euclid(max_x),
+            y: (robot.pos.y + (robot.dy * t)).rem_euclid(max_y) }
 }
 
 #[cfg(test)]
