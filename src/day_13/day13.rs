@@ -55,8 +55,6 @@ fn part_one(file: &str) -> i64 {
     let mut bx = 0;
     let mut ay = 0;
     let mut by = 0;
-    let mut prize_x = 0;
-    let mut prize_y = 0;
 
     let contents = fs::read_to_string(file).expect("Can't read the file");
     for line in contents.lines() {
@@ -74,8 +72,8 @@ fn part_one(file: &str) -> i64 {
         }
         if line.contains("Prize:") {
             let i: Vec<&str> = line.split(|c| "=,".contains(c)).collect();
-            prize_x = i[1].parse().unwrap();
-            prize_y = i[3].parse().unwrap();
+            let prize_x = i[1].parse().unwrap();
+            let prize_y = i[3].parse().unwrap();
 
             res += claw_part_two(ax, ay, bx, by, prize_x, prize_y);
         }
@@ -89,8 +87,6 @@ fn part_two (file: &str) -> i64 {
     let mut ay = 0;
     let mut bx = 0;
     let mut by = 0;
-    let mut prize_x = 0;
-    let mut prize_y = 0;
 
     let contents = fs::read_to_string(file).expect("Can't read the file");
     for line in contents.lines() {
@@ -108,8 +104,8 @@ fn part_two (file: &str) -> i64 {
         }
         if line.contains("Prize:") {
             let i: Vec<&str> = line.split(|c| "=,".contains(c)).collect();
-            prize_x = i[1].parse::<i64>().unwrap() + 10000000000000;
-            prize_y = i[3].parse::<i64>().unwrap() + 10000000000000;
+            let prize_x = i[1].parse::<i64>().unwrap() + 10000000000000;
+            let prize_y = i[3].parse::<i64>().unwrap() + 10000000000000;
             res += claw_part_two(ax, ay, bx, by, prize_x, prize_y);
         }
     }
