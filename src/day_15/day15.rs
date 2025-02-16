@@ -120,7 +120,7 @@ impl Warehouse {
                 }
             },
             None => {
-                return true;
+                true
             }
         }
     }
