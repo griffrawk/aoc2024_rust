@@ -1,6 +1,6 @@
 use regex::Regex;
 use std::fs;
-use colored::Colorize;
+// use colored::Colorize;
 use aocutils::point::Point;
 
 #[derive(Debug, Clone)]

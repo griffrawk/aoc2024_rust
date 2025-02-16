@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::Debug;
 use std::fs;
 use aocutils::point::Point;
 
@@ -9,17 +8,31 @@ struct Robot {
 }
 
 #[derive(Debug, Clone)]
+enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+#[derive(Debug, Clone)]
+enum Obstacle {
+    Wall,
+    Box,
+}
+
+#[derive(Debug, Clone)]
 struct Warehouse {
     robot: Robot,
-    locations: HashMap<Point<usize>, char>,
-    instructions: String,
+    locations: HashMap<Point<usize>, Obstacle>,
+    instructions: Vec<Direction>,
 }
 
 impl Warehouse {
     fn new(file: &str) -> Self {
         let mut robot: Robot = Default::default();
-        let mut locations: HashMap<Point<usize>, char> = HashMap::new();
-        let mut instructions = String::new();
+        let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
+        let mut instructions = Vec::new();
         let contents = fs::read_to_string(file).expect("Can't read the file");
         let mut map = true;
         for (y, line) in contents.lines().enumerate() {
@@ -30,9 +43,13 @@ impl Warehouse {
             if map {
                 for (x, c) in line.chars().enumerate() {
                     match c {
-                        'O' | '#' => {
+                        'O' => {
                             locations.entry(Point { x, y })
-                                .or_insert(c);
+                                .or_insert(Obstacle::Box);
+                        },
+                        '#' => {
+                            locations.entry(Point { x, y })
+                                .or_insert(Obstacle::Wall);
                         },
                         '@' => {
                             robot.pos.x = x;
@@ -42,78 +59,83 @@ impl Warehouse {
                     }
                 }
             } else {
-                instructions.push_str(line);
-                // instructions
+                for i in line.chars() {
+                    match i {
+                        '^' => instructions.push(Direction::North),
+                        '>' => instructions.push(Direction::East),
+                        'v' => instructions.push(Direction::South),
+                        '<' => instructions.push(Direction::West),
+                        _ => (),
+                    }
+                }
             }
         }
         Warehouse { robot, locations, instructions }
     }
 
     fn move_robot(&mut self) {
-        for instruction in self.instructions.clone().chars() {
+        for instruction in self.instructions.clone() {
             // calc proposed robot position
             let mut proposed_robot_move = self.robot.pos;
             // sort out an enum for instruction...
             match instruction {
-                '^' => proposed_robot_move.y -= 1,
-                '>' => proposed_robot_move.x += 1,
-                'v' => proposed_robot_move.y += 1,
-                '<' => proposed_robot_move.x -= 1,
-                _ => ()
+                Direction::North => proposed_robot_move.y -= 1,
+                Direction::East => proposed_robot_move.x += 1,
+                Direction::South => proposed_robot_move.y += 1,
+                Direction::West => proposed_robot_move.x -= 1,
             }
 
             if self.move_obstacle(proposed_robot_move, instruction) {
                 self.robot.pos = proposed_robot_move;
             }
         }
-        // whatever follows all moves
-        ()
     }
 
-    fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: char) -> bool{
-        // this box
-        match self.locations.entry(proposed_move) {
-            std::collections::hash_map::Entry::Occupied(entry) => {
-                match entry.get() {
+    fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: Direction) -> bool{
+        let loc = self.locations.get(&proposed_move);
+        match loc {
+            Some(e) => {
+                match e {
                     // if wall then cannot move
-                    '#' => return false,
+                    Obstacle::Wall => return false,
                     // if box { check if box can move, move if yes}
-                    'O' => {
+                    Obstacle::Box => {
                         let mut next_move = proposed_move;
                         match instruction {
-                            '^' => next_move.y -= 1,
-                            '>' => next_move.x += 1,
-                            'v' => next_move.y += 1,
-                            '<' => next_move.x -= 1,
-                            _ => ()
+                            Direction::North => next_move.y -= 1,
+                            Direction::East => next_move.x += 1,
+                            Direction::South => next_move.y += 1,
+                            Direction::West => next_move.x -= 1,
                         }
                         return if self.move_obstacle(next_move, instruction) {
-                            // insert 'O' at next move
+                            // insert box at next move
+                            self.locations.entry(next_move).or_insert(Obstacle::Box);
                             // remove the box at proposed_move
-                            self.locations.entry(next_move).or_insert('O');
-                            entry.remove();
+                            self.locations.remove(&proposed_move);
                             true
                         } else {
                             false
                         }
                     },
-                    _ => (),
                 }
             },
-            std::collections::hash_map::Entry::Vacant(_entry) => {
+            None => {
                 return true;
             }
         }
-        false
     }
 }
 
 fn part_one(file: &str) -> usize {
     let mut warehouse = Warehouse::new(file);
     warehouse.move_robot();
-    dbg!(&warehouse);
-
-    2028
+    let mut res = 0;
+    for (pos, c) in warehouse.locations {
+        if let Obstacle::Box = c {
+            res += pos.y * 100 + pos.x;
+        }
+    }
+    res
 }
 
 #[cfg(test)]
@@ -135,7 +157,7 @@ mod tests {
     #[test]
     fn test_part_one_data() {
         let result = part_one("src/day_15/day15_data.txt");
-        assert_eq!(result, 231852216);
+        assert_eq!(result, 1421727);
     }
 
 }
