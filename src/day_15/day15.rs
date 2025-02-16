@@ -97,7 +97,7 @@ impl Warehouse {
             Some(e) => {
                 match e {
                     // if wall then cannot move
-                    Obstacle::Wall => return false,
+                    Obstacle::Wall => false,
                     // if box { check if box can move, move if yes}
                     Obstacle::Box => {
                         let mut next_move = proposed_move;
