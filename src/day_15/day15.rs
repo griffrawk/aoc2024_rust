@@ -6,7 +6,6 @@ use aocutils::point::Point;
 #[derive(Debug, Clone, Default)]
 struct Robot {
     pos: Point<usize>,
-    direction: char,
 }
 
 #[derive(Debug, Clone)]
@@ -38,7 +37,6 @@ impl Warehouse {
                         '@' => {
                             robot.pos.x = x;
                             robot.pos.y = y;
-                            robot.direction = ' ';
                         },
                         _ => (),
                     }
@@ -55,6 +53,7 @@ impl Warehouse {
         for instruction in self.instructions.clone().chars() {
             // calc proposed robot position
             let mut proposed_robot_move = self.robot.pos;
+            // sort out an enum for instruction...
             match instruction {
                 '^' => proposed_robot_move.y -= 1,
                 '>' => proposed_robot_move.x += 1,
@@ -63,47 +62,55 @@ impl Warehouse {
                 _ => ()
             }
 
-            // might be able to collapse most of this into the rec fn
-            // check for walls or boxes
-            match self.locations.entry(proposed_robot_move) {
-                std::collections::hash_map::Entry::Occupied(entry) => {
-                    match *entry.get() {
-                        // if wall { cannot move } (match arm might be redundant)
-                        '#' => (),
-                        // if box { check if box can move, move if yes}
-                        'O' => {
-                            if self.move_box(proposed_robot_move) {
-                                self.robot.pos = proposed_robot_move;
-                            };
-                        },
-                        _ => (),
-                    }
-                }
-                std::collections::hash_map::Entry::Vacant(entry) => {
-                    // if free { move robot }
-                    self.robot.pos = proposed_robot_move;
-                }
-
+            if self.move_obstacle(proposed_robot_move, instruction) {
+                self.robot.pos = proposed_robot_move;
             }
         }
-
+        // whatever follows all moves
+        ()
     }
 
-    fn move_box(&mut self, proposed_move: Point<usize>,) -> bool{
-
-        // exit conditions?
-
-        // check for walls or boxes
-        // if free { move box }
-        // if wall { cannot move}
-        // if box { rec check if box can move, move if yes }
-
+    fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: char) -> bool{
+        // this box
+        match self.locations.entry(proposed_move) {
+            std::collections::hash_map::Entry::Occupied(entry) => {
+                match entry.get() {
+                    // if wall then cannot move
+                    '#' => return false,
+                    // if box { check if box can move, move if yes}
+                    'O' => {
+                        let mut next_move = proposed_move;
+                        match instruction {
+                            '^' => next_move.y -= 1,
+                            '>' => next_move.x += 1,
+                            'v' => next_move.y += 1,
+                            '<' => next_move.x -= 1,
+                            _ => ()
+                        }
+                        return if self.move_obstacle(next_move, instruction) {
+                            // insert 'O' at next move
+                            // remove the box at proposed_move
+                            self.locations.entry(next_move).or_insert('O');
+                            entry.remove();
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    _ => (),
+                }
+            },
+            std::collections::hash_map::Entry::Vacant(_entry) => {
+                return true;
+            }
+        }
         false
     }
 }
 
 fn part_one(file: &str) -> usize {
-    let warehouse = Warehouse::new(file);
+    let mut warehouse = Warehouse::new(file);
+    warehouse.move_robot();
     dbg!(&warehouse);
 
     2028
