@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs;
+use std::{env, fs};
 use plotters::coord::types::RangedCoordi32;
 use aocutils::point::Point;
 use plotters::prelude::*;
@@ -26,7 +26,7 @@ enum Obstacle {
 }
 
 #[derive(Debug, Clone)]
-struct Warehouse {
+pub struct Warehouse {
     robot: Robot,
     locations: HashMap<Point<usize>, Obstacle>,
     instructions: Vec<Direction>,
@@ -34,7 +34,7 @@ struct Warehouse {
 }
 
 impl Warehouse {
-    fn new(file: &str) -> Self {
+    pub fn new(file: &str) -> Self {
         let mut robot: Robot = Default::default();
         let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
         let mut instructions = Vec::new();
@@ -78,7 +78,7 @@ impl Warehouse {
         Warehouse { robot, locations, instructions, plot_sequence: 0 }
     }
 
-    fn visual_plot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn visual_plot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
         let root_area = BitMapBackend::new(&out , (1024, 1024))
             .into_drawing_area();
@@ -112,15 +112,17 @@ impl Warehouse {
         root_area.draw(&robot(self.robot.pos.x as i32, self.robot.pos.y as i32))?;
 
         root_area.present()?;
+        self.plot_sequence += 1;
 
         Ok(())
     }
 
 
-    fn move_robot(&mut self) {
+    pub fn move_robot(&mut self) {
         // todo visualise frame 0
         self.visual_plot().expect("TODO: panic message");
         for instruction in self.instructions.clone() {
+            self.visual_plot().expect("TODO: panic message");
             // calc proposed robot position
             let mut proposed_robot_move = self.robot.pos;
             // sort out an enum for instruction...
@@ -133,13 +135,11 @@ impl Warehouse {
 
             if self.move_obstacle(proposed_robot_move, instruction) {
                 self.robot.pos = proposed_robot_move;
-                self.visual_plot().expect("TODO: panic message");
             }
-        self.plot_sequence += 1;
         }
     }
 
-    fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: Direction) -> bool{
+    pub fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: Direction) -> bool{
         match self.locations.get(&proposed_move) {
             Some(obstacle) => {
                 match obstacle {
@@ -159,7 +159,6 @@ impl Warehouse {
                             self.locations.entry(next_move).or_insert(Obstacle::Box);
                             // remove the box at proposed_move
                             self.locations.remove(&proposed_move);
-                            // self.visual_plot().expect("TODO: panic message");
                             true
                         } else {
                             false
@@ -175,6 +174,8 @@ impl Warehouse {
 }
 
 fn part_one(file: &str) -> usize {
+    let path = env::current_dir().unwrap();
+    println!("The current directory is {}", path.display());
     let mut warehouse = Warehouse::new(file);
     warehouse.move_robot();
     println!("Robot moves = {}", warehouse.plot_sequence);
@@ -210,3 +211,6 @@ mod tests {
     }
 
 }
+
+
+
