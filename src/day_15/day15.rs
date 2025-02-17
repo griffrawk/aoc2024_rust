@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::{env, fs};
+use std::fs;
 use plotters::coord::types::RangedCoordi32;
 use aocutils::point::Point;
 use plotters::prelude::*;
@@ -7,12 +7,12 @@ use plotters::prelude::*;
 const OUTPUT_FILENAME: &str = "src/day_15/output/day_15_gen_";
 
 #[derive(Debug, Clone, Default)]
-struct Robot {
+pub struct Robot {
     pos: Point<usize>,
 }
 
 #[derive(Debug, Clone)]
-enum Direction {
+pub enum Direction {
     North,
     East,
     South,
@@ -20,7 +20,7 @@ enum Direction {
 }
 
 #[derive(Debug, Clone)]
-enum Obstacle {
+pub enum Obstacle {
     Wall,
     Box,
 }
@@ -117,7 +117,6 @@ impl Warehouse {
         Ok(())
     }
 
-
     pub fn move_robot(&mut self) {
         // todo visualise frame 0
         self.visual_plot().expect("TODO: panic message");
@@ -173,24 +172,25 @@ impl Warehouse {
     }
 }
 
-fn part_one(file: &str) -> usize {
-    let path = env::current_dir().unwrap();
-    println!("The current directory is {}", path.display());
-    let mut warehouse = Warehouse::new(file);
-    warehouse.move_robot();
-    println!("Robot moves = {}", warehouse.plot_sequence);
-    let mut res = 0;
-    for (pos, c) in warehouse.locations {
-        if let Obstacle::Box = c {
-            res += pos.y * 100 + pos.x;
-        }
-    }
-    res
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::day_15::day15::{part_one};
+    use std::env;
+    use crate::day_15::day15::{Obstacle, Warehouse};
+
+    fn part_one(file: &str) -> usize {
+        let path = env::current_dir().unwrap();
+        println!("The current directory is {}", path.display());
+        let mut warehouse = Warehouse::new(file);
+        warehouse.move_robot();
+        println!("Robot moves = {}", warehouse.plot_sequence);
+        let mut res = 0;
+        for (pos, c) in warehouse.locations {
+            if let Obstacle::Box = c {
+                res += pos.y * 100 + pos.x;
+            }
+        }
+        res
+    }
 
     #[test]
     fn test_part_one_basic() {

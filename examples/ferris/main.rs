@@ -74,6 +74,6 @@ impl eframe::App for MyApp {
 fn fred() {
     let path = env::current_dir().unwrap();
     println!("The current directory is {}", path.display());
-    let mut warehouse = Warehouse::new("aoc2024/src/day_15/day15_basic.txt");
-
+    let warehouse = Warehouse::new("aoc2024/src/day_15/day15_basic.txt");
+    dbg!(warehouse);
 }
