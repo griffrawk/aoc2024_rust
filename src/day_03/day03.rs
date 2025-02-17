@@ -1,54 +1,51 @@
-use regex::Regex;
-use std::fs;
-
-#[allow(dead_code)]
-pub fn part_one(file: &str) -> i32 {
-    let contents: String = fs::read_to_string(file).expect("Can't read the file");
-    let mut res = 0;
-    let re = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
-    for (_, [a, b]) in re.captures_iter(&contents).map(|c| c.extract()) {
-        res += a.parse::<i32>().unwrap() * b.parse::<i32>().unwrap();
-    }
-    res
-}
-
-#[allow(dead_code)]
-pub fn part_two(file: &str) -> i32 {
-    let contents: String = fs::read_to_string(file).expect("Can't read the file");
-    let mut res = 0;
-    let mut opdoflag = true;
-    // Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
-    // because all 4 captures may not be present. don't() or do() or mul()
-    let re =
-        Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+").unwrap();
-    for caps in re.captures_iter(&contents) {
-        let opdo = &caps.name("opdo").map_or("nope", |m| m.as_str());
-        let opdont = &caps.name("opdont").map_or("nope", |m| m.as_str());
-        let a = &caps
-            .name("a")
-            .map_or("0", |m| m.as_str())
-            .parse::<i32>()
-            .unwrap();
-        let b = &caps
-            .name("b")
-            .map_or("0", |m| m.as_str())
-            .parse::<i32>()
-            .unwrap();
-        // if opdoflag changes, skip the accumulation
-        if *opdo == "do()" {
-            opdoflag = true
-        } else if *opdont == "don't()" {
-            opdoflag = false
-        } else if opdoflag {
-            res += a * b;
-        }
-    }
-    res
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::day_03::day03::{part_one, part_two};
+
+    use regex::Regex;
+    use std::fs;
+
+    pub fn part_one(file: &str) -> i32 {
+        let contents: String = fs::read_to_string(file).expect("Can't read the file");
+        let mut res = 0;
+        let re = Regex::new(r"mul\((\d+),(\d+)\)").unwrap();
+        for (_, [a, b]) in re.captures_iter(&contents).map(|c| c.extract()) {
+            res += a.parse::<i32>().unwrap() * b.parse::<i32>().unwrap();
+        }
+        res
+    }
+
+    pub fn part_two(file: &str) -> i32 {
+        let contents: String = fs::read_to_string(file).expect("Can't read the file");
+        let mut res = 0;
+        let mut opdoflag = true;
+        // Here, I have to use named captures, as I can't use the .extract() into tuple method as above. That's
+        // because all 4 captures may not be present. don't() or do() or mul()
+        let re = Regex::new(r"(?<opdont>don't\(\))+|(?<opdo>do\(\))+|mul\((?<a>\d+),(?<b>\d+)\)+")
+            .unwrap();
+        for caps in re.captures_iter(&contents) {
+            let opdo = &caps.name("opdo").map_or("nope", |m| m.as_str());
+            let opdont = &caps.name("opdont").map_or("nope", |m| m.as_str());
+            let a = &caps
+                .name("a")
+                .map_or("0", |m| m.as_str())
+                .parse::<i32>()
+                .unwrap();
+            let b = &caps
+                .name("b")
+                .map_or("0", |m| m.as_str())
+                .parse::<i32>()
+                .unwrap();
+            // if opdoflag changes, skip the accumulation
+            if *opdo == "do()" {
+                opdoflag = true
+            } else if *opdont == "don't()" {
+                opdoflag = false
+            } else if opdoflag {
+                res += a * b;
+            }
+        }
+        res
+    }
 
     #[test]
     fn test_part_one_test() {
