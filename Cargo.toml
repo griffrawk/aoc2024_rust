@@ -28,5 +28,5 @@ env_logger = { version = "0.11.6", default-features = false, features = [
     "humantime",
 ] }
 
-#[[example]]
-#name = "ferris"
+[[example]]
+name = "ferris"
