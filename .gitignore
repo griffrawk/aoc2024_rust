@@ -1,5 +1,6 @@
 /target
 src/**/*.txt
+output/**/*.png
 .idea
 .vscode
 .DS_Store

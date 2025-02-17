@@ -1,0 +1,1 @@
+ffmpeg -pattern_type glob -i "*.png" -c:v libx264 -pix_fmt yuv420p -movflags +faststart output.mp4
