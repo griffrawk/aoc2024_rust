@@ -1,9 +1,6 @@
-use std::env;
 use eframe::egui::{self, Color32, RichText};
-use aoc2024::day_15::day15::Warehouse;
 
 fn main() -> Result<(), eframe::Error> {
-    fred();
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 320.0]),
@@ -69,11 +66,4 @@ impl eframe::App for MyApp {
             ));
         });
     }
-}
-
-fn fred() {
-    let path = env::current_dir().unwrap();
-    println!("The current directory is {}", path.display());
-    let warehouse = Warehouse::new("aoc2024/src/day_15/day15_basic.txt");
-    dbg!(warehouse);
 }
