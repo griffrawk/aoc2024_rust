@@ -28,5 +28,35 @@ env_logger = { version = "0.11.6", default-features = false, features = [
     "humantime",
 ] }
 
-[[example]]
+[[bin]]
 name = "ferris"
+[[bin]]
+name = "day_01"
+[[bin]]
+name = "day_02"
+[[bin]]
+name = "day_03"
+[[bin]]
+name = "day_04"
+[[bin]]
+name = "day_05"
+[[bin]]
+name = "day_06"
+[[bin]]
+name = "day_07"
+[[bin]]
+name = "day_08"
+[[bin]]
+name = "day_09"
+[[bin]]
+name = "day_10"
+[[bin]]
+name = "day_11"
+[[bin]]
+name = "day_12"
+[[bin]]
+name = "day_13"
+[[bin]]
+name = "day_14"
+[[bin]]
+name = "day_15"
