@@ -1,7 +1,7 @@
 /target
 src/**/*.txt
+src/**/*.png
 .idea
 .vscode
 .DS_Store
-*.png
 *.mp4
