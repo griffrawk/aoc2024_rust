@@ -61,9 +61,7 @@ impl eframe::App for MyApp {
             ui.label(format!("Hello '{}', age {}", self.name, self.age));
 
             // an image
-            ui.image(egui::include_image!(
-                "ferris.png"
-            ));
+            ui.image(egui::include_image!("ferris.png"));
         });
     }
 }

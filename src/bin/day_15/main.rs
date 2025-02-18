@@ -5,7 +5,7 @@ mod tests {
     use plotters::coord::types::RangedCoordi32;
     use plotters::prelude::*;
     use std::collections::HashMap;
-    use std::{fs, env};
+    use std::{env, fs};
 
     const OUTPUT_FILENAME: &str = "src/bin/day_15/output/day_15_gen_";
 
@@ -124,7 +124,6 @@ mod tests {
         }
 
         fn move_robot(&mut self) {
-            self.visual_plot().expect("TODO: panic message");
             for instruction in self.instructions.clone() {
                 self.visual_plot().expect("TODO: panic message");
                 // calc proposed robot position
@@ -143,11 +142,7 @@ mod tests {
             }
         }
 
-        fn move_obstacle(
-            &mut self,
-            proposed_move: Point<usize>,
-            instruction: Direction,
-        ) -> bool {
+        fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: Direction) -> bool {
             match self.locations.get(&proposed_move) {
                 Some(obstacle) => {
                     match obstacle {
@@ -163,7 +158,7 @@ mod tests {
                                 Direction::West => next_move.x -= 1,
                             }
                             if self.move_obstacle(next_move, instruction) {
-                                // insert box at next move
+                                // insert box at next_move
                                 self.locations.entry(next_move).or_insert(Obstacle::Box);
                                 // remove the box at proposed_move
                                 self.locations.remove(&proposed_move);

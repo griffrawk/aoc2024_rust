@@ -4,7 +4,7 @@ mod tests {
     use aocutils::point::Point;
     use regex::Regex;
     use std::fs;
-    
+
     #[derive(Debug, Clone)]
     struct Robot {
         pos: Point<i32>,
@@ -135,13 +135,13 @@ mod tests {
             //     print!("{}", "|".blue());
             //     for (x, r ) in line.iter().enumerate() {
             //         if x as i32 == (max_x / 2).abs() || y as i32 == (max_y / 2).abs() {
-                        // centre line
-                        // print!("{}", r.to_string().red());
-                    // } else {
-                    //     print!("{}", r.to_string().bright_green());
-                    // }
-                // }
-                // println!("{}", "|".blue());
+            // centre line
+            // print!("{}", r.to_string().red());
+            // } else {
+            //     print!("{}", r.to_string().bright_green());
+            // }
+            // }
+            // println!("{}", "|".blue());
             // }
             // println!("{}", bar);
 
