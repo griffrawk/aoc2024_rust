@@ -6,7 +6,9 @@ fn main() {
 }
 
 // AoC tests
-pub mod day15;
+pub mod day15_part_one;
+mod day15_in_sdl3;
+
 #[cfg(test)]
 mod tests {
     use crate::day15::part_one;
