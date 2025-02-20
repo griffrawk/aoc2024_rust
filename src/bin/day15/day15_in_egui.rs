@@ -2,10 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use aocutils::point::Point;
-use eframe::egui::{self, Pos2, Rect, RichText};
+use eframe::egui::{self, Pos2};
 use eframe::emath::Vec2;
 use std::collections::{HashMap, VecDeque};
-use std::{env, fs};
+use std::fs;
 
 pub fn egui_main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -46,7 +46,6 @@ enum Obstacle {
     Box,
 }
 
-// todo change Point references to the egui Point probably
 #[derive(Debug, Clone)]
 struct Warehouse {
     max_x: usize,
@@ -63,8 +62,6 @@ struct Warehouse {
 // fixme
 impl Default for Warehouse {
     fn default() -> Self {
-        // let path = env::current_dir().unwrap();
-        // println!("The current directory is {}", path.display());
         let file = "aoc2024/src/bin/day15/day15_data.txt";
         let mut robot: Robot = Default::default();
         let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
