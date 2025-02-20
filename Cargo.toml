@@ -12,8 +12,19 @@ regex = "1.11.1"
 rayon = "1.10.0"
 aocutils = { path = "../aocutils" }
 plotters = "0.3.7"
-sdl3 = "0.14.11"
+eframe = {version = "0.31.0", features = [
+    "default",
+    "__screenshot", # __screenshot is so we can dump a screenshot using EFRAME_SCREENSHOT_TO
+] }
+# For image support:
+egui_extras = {version = "0.31.0", features = ["default", "image"] }
+env_logger = { version = "0.11.6", default-features = false, features = [
+    "auto-color",
+    "humantime",
+] }
 
+[[bin]]
+name = "ferris"
 [[bin]]
 name = "day01"
 [[bin]]

@@ -1,9 +1,9 @@
 mod day15_part_one;
-mod day15_in_sdl3;
-use day15_in_sdl3::sdl3_main;
+mod day15_in_egui;
+use day15_in_egui::egui_main;
 
 fn main() {
-    sdl3_main();
+    egui_main().unwrap();
 }
 
 
