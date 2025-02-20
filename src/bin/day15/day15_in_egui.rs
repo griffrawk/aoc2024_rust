@@ -195,7 +195,8 @@ impl eframe::App for Warehouse {
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
                 
-                let phys_pos = |canvas_dim: Rect, pos: Point<usize>| -> (Pos2, f32) {
+                let phys_pos = |pos: Point<usize>| -> (Pos2, f32) {
+                    let canvas_dim = canvas_ui.max_rect();
                     // return centre position, increment (to base radii etc. on)
                     let increment = (canvas_dim.width() / self.max_x as f32)
                         .min(canvas_dim.height() / self.max_y as f32);
@@ -209,9 +210,8 @@ impl eframe::App for Warehouse {
                 };
                 
                 // Walls and boxes
-                let canvas_dim = canvas_ui.max_rect();
                 for (pos, obstacle) in &self.locations {
-                    let (canvas_pos, increment) = phys_pos(canvas_dim, *pos);
+                    let (canvas_pos, increment) = phys_pos(*pos);
                     match obstacle {
                         Obstacle::Wall => {
                             canvas_ui.painter().rect_filled(
@@ -245,7 +245,7 @@ impl eframe::App for Warehouse {
                 }
 
                 // Robot
-                let (robot_pos, increment) = phys_pos(canvas_dim, self.robot.pos);
+                let (robot_pos, increment) = phys_pos(self.robot.pos);
 
                 canvas_ui
                     .painter()
