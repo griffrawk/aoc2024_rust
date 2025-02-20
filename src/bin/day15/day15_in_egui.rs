@@ -1,11 +1,11 @@
 // hide console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use aocutils::point::Point;
+use eframe::egui::{self, Pos2, Rect, RichText};
+use eframe::emath::Vec2;
 use std::collections::{HashMap, VecDeque};
 use std::{env, fs};
-use std::time::Duration;
-use eframe::egui::{self, RichText};
-use aocutils::point::Point;
 
 pub fn egui_main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -49,10 +49,15 @@ enum Obstacle {
 // todo change Point references to the egui Point probably
 #[derive(Debug, Clone)]
 struct Warehouse {
+    max_x: usize,
+    max_y: usize,
+    original_robot: Robot,
     robot: Robot,
+    original_locations: HashMap<Point<usize>, Obstacle>,
     locations: HashMap<Point<usize>, Obstacle>,
     instructions: Vec<Direction>,
     instruction_queue: VecDeque<Direction>,
+    iterations: usize,
 }
 
 // fixme
@@ -60,12 +65,14 @@ impl Default for Warehouse {
     fn default() -> Self {
         // let path = env::current_dir().unwrap();
         // println!("The current directory is {}", path.display());
-        let file = "aoc2024/src/bin/day15/day15_test.txt";
+        let file = "aoc2024/src/bin/day15/day15_data.txt";
         let mut robot: Robot = Default::default();
         let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
         let mut instructions = Vec::new();
         let contents = fs::read_to_string(file).expect("Can't read the file");
         let mut map = true;
+        let mut max_x = 0;
+        let mut max_y = 0;
         for (y, line) in contents.lines().enumerate() {
             if line.is_empty() {
                 map = false;
@@ -87,6 +94,8 @@ impl Default for Warehouse {
                         _ => (),
                     }
                 }
+                max_x = line.len();
+                max_y = max_y.max(y);
             } else {
                 for i in line.chars() {
                     match i {
@@ -99,23 +108,31 @@ impl Default for Warehouse {
                 }
             }
         }
-        let mut instruction_queue = VecDeque::from(instructions.clone());
+        let instruction_queue = VecDeque::from(instructions.clone());
+        let original_robot = robot.clone();
+        let original_locations = locations.clone();
 
         Warehouse {
+            max_x,
+            max_y,
+            original_robot,
             robot,
+            original_locations,
             locations,
             instructions,
             instruction_queue,
+            iterations: 0,
         }
     }
 }
 
 impl Warehouse {
-    fn reset_instructions(&mut self) {
+    fn reset_warehouse(&mut self) {
         self.instruction_queue.drain(0..);
         self.instruction_queue = VecDeque::from(self.instructions.clone());
-
-        // todo also has to reset the warehouse and robot position!
+        self.robot = self.original_robot.clone();
+        self.locations = self.original_locations.clone();
+        self.iterations = 0;
     }
 
     fn move_robot(&mut self, instruction: Direction) {
@@ -167,37 +184,83 @@ impl Warehouse {
 impl eframe::App for Warehouse {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("Top").show(ctx, |top_ui| {
-           // todo space the panel out a bit, put counter in here and a slider to control speed
+            // todo space the panel out a bit, put counter in here and a slider to control speed
             if top_ui.button("Reset Warehouse").clicked() {
-                self.reset_instructions();
+                self.reset_warehouse();
             }
+            top_ui.horizontal(|ui|{
+                ui.label(format!("Iterations: {}", self.iterations));
+            })
         });
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
-                // todo replace with wall, box, and robot drawing
-                //  needs some scaling code for logical array size vs logical screen size,
-                //  and provide some gaps between boxes, eg 18x18 on a 20x20 grid
-                canvas_ui.painter().rect_filled(
-                    egui::Rect::from_x_y_ranges(20.0..=50.0, 10.0..=50.0),
-                    egui::CornerRadius::default(),
-                    egui::Color32::GREEN,
-                );
+                
+                let phys_pos = |canvas_dim: Rect, pos: Point<usize>| -> (Pos2, f32) {
+                    // return centre position, increment (to base radii etc. on)
+                    let increment = (canvas_dim.width() / self.max_x as f32)
+                        .min(canvas_dim.height() / self.max_y as f32);
+                    (
+                        Pos2 {
+                            x: increment * pos.x as f32 + canvas_dim.min.x + increment / 2.0,
+                            y: increment * pos.y as f32 + canvas_dim.min.y + increment / 2.0,
+                        },
+                        increment,
+                    )
+                };
+                
+                // Walls and boxes
+                let canvas_dim = canvas_ui.max_rect();
+                for (pos, obstacle) in &self.locations {
+                    let (canvas_pos, increment) = phys_pos(canvas_dim, *pos);
+                    match obstacle {
+                        Obstacle::Wall => {
+                            canvas_ui.painter().rect_filled(
+                                egui::Rect::from_center_size(
+                                    canvas_pos,
+                                    Vec2 {
+                                        // 2 point gap
+                                        x: increment - 2.0,
+                                        y: increment - 2.0,
+                                    },
+                                ),
+                                egui::CornerRadius::default(),
+                                egui::Color32::RED,
+                            );
+                        }
+                        Obstacle::Box => {
+                            canvas_ui.painter().rect_filled(
+                                egui::Rect::from_center_size(
+                                    canvas_pos,
+                                    Vec2 {
+                                        // 2 point gap
+                                        x: increment - 2.0,
+                                        y: increment - 2.0,
+                                    },
+                                ),
+                                egui::CornerRadius::default(),
+                                egui::Color32::GREEN,
+                            );
+                        }
+                    }
+                }
 
                 // Robot
-                canvas_ui.painter().circle_filled(
-                    egui::Pos2::new((self.robot.pos.x * 50) as f32, (self.robot.pos.y * 50) as f32),
-                    20.0,
-                    egui::Color32::BLUE);
-            });
+                let (robot_pos, increment) = phys_pos(canvas_dim, self.robot.pos);
 
+                canvas_ui
+                    .painter()
+                    // 2 point gap
+                    .circle_filled(robot_pos, increment / 2.0 - 2.0, egui::Color32::CYAN);
+            });
         });
 
         // call modified robot move, take each instruction as a seq, then display warehouse
         // on next loop
         if let Some(i) = self.instruction_queue.pop_front() {
             self.move_robot(i);
+            self.iterations += 1;
         }
 
-        ctx.request_repaint_after(Duration::from_nanos(500000));
+        ctx.request_repaint();
     }
 }
