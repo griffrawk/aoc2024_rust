@@ -205,7 +205,7 @@ impl eframe::App for Warehouse {
                         increment,
                     )
                 };
-                
+
                 // Walls and boxes
                 for (pos, obstacle) in &self.locations {
                     let (canvas_pos, increment) = phys_pos(*pos);
@@ -215,9 +215,8 @@ impl eframe::App for Warehouse {
                                 egui::Rect::from_center_size(
                                     canvas_pos,
                                     Vec2 {
-                                        // 2 point gap
-                                        x: increment - 2.0,
-                                        y: increment - 2.0,
+                                        x: increment,
+                                        y: increment,
                                     },
                                 ),
                                 egui::CornerRadius::default(),
@@ -234,7 +233,7 @@ impl eframe::App for Warehouse {
                                         y: increment - 2.0,
                                     },
                                 ),
-                                egui::CornerRadius::default(),
+                                egui::CornerRadius::from(increment / 5.0f32),
                                 egui::Color32::GREEN,
                             );
                         }
