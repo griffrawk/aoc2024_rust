@@ -6,7 +6,6 @@ use eframe::egui::{self, Pos2};
 use eframe::emath::Vec2;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
-use std::time::Duration;
 
 pub fn egui_main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -21,7 +20,7 @@ pub fn egui_main() -> Result<(), eframe::Error> {
             // This gives us image support:
             egui_extras::install_image_loaders(&cc.egui_ctx);
             // run the main loop
-            Ok(Box::<Warehouse>::default())
+            Ok(Box::new(Warehouse::new(cc)))
         }),
     )
 }
@@ -47,7 +46,7 @@ enum Obstacle {
     Box,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 struct Warehouse {
     max_x: usize,
     max_y: usize,
@@ -60,11 +59,12 @@ struct Warehouse {
     iterations: usize,
     delay: usize,
     running: bool,
+    delta: f64,
 }
 
 // fixme
-impl Default for Warehouse {
-    fn default() -> Self {
+impl Warehouse {
+    fn new(_: &eframe::CreationContext<'_>) -> Self {
         let file = "aoc2024/src/bin/day15/day15_data.txt";
         let mut robot: Robot = Default::default();
         let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
@@ -124,11 +124,10 @@ impl Default for Warehouse {
             iterations: 0,
             delay: 0,
             running: true,
+            delta: 0.0,
         }
     }
-}
 
-impl Warehouse {
     fn reset_warehouse(&mut self) {
         self.instruction_queue.drain(0..);
         self.instruction_queue = VecDeque::from(self.instructions.clone());
@@ -204,13 +203,13 @@ impl eframe::App for Warehouse {
                     }
                 });
                 cols[2].vertical_centered_justified(|ui| {
-                    ui.add(egui::Slider::new(&mut self.delay, 0..=200).text("Delay ms"))
+                    ui.add(egui::Slider::new(&mut self.delay, 0..=500).text("Delay ms"))
                 });
             });
         });
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
-                
+
                 let pos_on_canvas = | wh_pos: Point<usize> | -> (Pos2, f32) {
                     // input warehouse coordinates
                     // return canvas points centre position, ui canvas spacing
@@ -277,14 +276,20 @@ impl eframe::App for Warehouse {
 
         // call modified robot move, take each instruction as a seq, then display warehouse
         // on next loop
-        if self.running {
-            if let Some(i) = self.instruction_queue.pop_front() {
-                self.move_robot(i);
-                self.iterations += 1;
+        // instead of trying to slow it down, instead we check whether enough time has elapsed
+        // since the last warehouse update. if so, then we run it and request refresh
+
+        let delta = ctx.input(|i| i.time);
+        if delta - self.delta > self.delay as f64 / 1000.0 {
+            self.delta = delta;
+            if self.running {
+                if let Some(i) = self.instruction_queue.pop_front() {
+                    self.move_robot(i);
+                    self.iterations += 1;
+                }
             }
         }
+        ctx.request_repaint();
 
-        // todo get a better way to animate & delay
-        ctx.request_repaint_after(Duration::from_millis(self.delay as u64));
     }
 }
