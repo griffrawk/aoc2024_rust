@@ -7,7 +7,7 @@ mod tests {
     use plotters::coord::types::RangedCoordi32;
     use plotters::prelude::*;
     
-    const OUTPUT_FILENAME: &str = "src/bin/day15/output_part2/day15_gen_";
+    const OUTPUT_FILENAME: &str = "src/bin/day15/output_part2/day15_gen";
 
     #[derive(Debug, Clone, Default)]
     struct Robot {
@@ -33,7 +33,7 @@ mod tests {
         robot: Robot,
         locations: HashMap<Point<usize>, Obstacle>,
         instructions: Vec<Direction>,
-        plot_sequence: usize,
+        plot_sequence: isize,
     }
 
     impl Warehouse {
@@ -53,7 +53,9 @@ mod tests {
                         let x2 = x * 2;
                         match c {
                             'O' => {
-                                locations.entry(Point { x: x2, y }).or_insert(Obstacle::Box);
+                                locations
+                                    .entry(Point { x: x2, y })
+                                    .or_insert(Obstacle::Box);
                             }
                             '#' => {
                                 locations
@@ -83,30 +85,39 @@ mod tests {
                 robot,
                 locations,
                 instructions,
-                plot_sequence: 0,
+                plot_sequence: -1,
             }
         }
 
-        fn visual_plot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            let out = format!("{}{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
+        fn visual_plot(&mut self, instruction: &Direction) -> Result<(), Box<dyn std::error::Error>> {
+            let out = format!("{}_{}_{:06}{}", 
+                                OUTPUT_FILENAME,
+                                match instruction {
+                                    Direction::North => '^',
+                                    Direction::East => '>',
+                                    Direction::South => 'v',
+                                    Direction::West => '<',
+                                },
+                                self.plot_sequence, 
+                                ".png");
             let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
             root_area.fill(&WHITE).unwrap();
             let root_area = root_area.apply_coord_spec(
-                Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..100, 0..100, (0..1024, 0..1024)),
+                Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..30, 0..30, (0..1024, 0..1024)),
             );
 
             let wall_block = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Rectangle::new([(0, 0), (42, 21)], ShapeStyle::from(&RED).filled());
+                    + Rectangle::new([(0, 0), (64, 32)], ShapeStyle::from(&RED).filled());
             };
             let box_block = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Rectangle::new([(0, 0), (38, 18)], ShapeStyle::from(&GREEN).filled());
+                    + Rectangle::new([(0, 0), (64, 32)], ShapeStyle::from(&GREEN).filled());
             };
             let robot = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Circle::new((9, 9), 9, ShapeStyle::from(&BLUE).filled());
+                    + Circle::new((16, 16), 16, ShapeStyle::from(&BLUE).filled());
             };
 
             for (pos, obstacle) in &self.locations {
@@ -116,27 +127,26 @@ mod tests {
                 }
             }
             root_area.draw(&robot(self.robot.pos.x as i32, self.robot.pos.y as i32))?;
-
             root_area.present()?;
-            self.plot_sequence += 1;
-
             Ok(())
         }
 
         fn move_robot(&mut self) {
             for instruction in self.instructions.clone() {
-                self.visual_plot().expect("TODO: panic message");
                 
                 let mut move_list: Vec<Point<usize>> = Vec::new();
                 let mut proposed_robot_move = self.robot.pos;
                 // more to check when moving north or south, push 2 checks,
                 // otherwise 1 check each for East, West
+                // todo this is unclear and uses too much incrementing
                 match instruction {
                     Direction::North => {
                         proposed_robot_move.y -= 1;
                         move_list.push(proposed_robot_move);
                         proposed_robot_move.x -= 1;
                         move_list.push(proposed_robot_move);
+                        // reset
+                        proposed_robot_move.x += 1;
                     }
                     Direction::East => {
                         proposed_robot_move.x += 1;
@@ -147,10 +157,16 @@ mod tests {
                         move_list.push(proposed_robot_move);
                         proposed_robot_move.x -= 1;
                         move_list.push(proposed_robot_move);
+                        // reset
+                        proposed_robot_move.x += 1;
                     }
                     Direction::West => {
-                        proposed_robot_move.x -= 1;
+                        // look for an obstacle x - 2
+                        // but this is then moving the box by -2,
+                        // when it only should move by -1
+                        proposed_robot_move.x -= 2;
                         move_list.push(proposed_robot_move);
+                        proposed_robot_move.x += 1;
                     }
                 }
                 // Process each move, only move robot if all true
@@ -161,6 +177,8 @@ mod tests {
                 if !res.contains(&false) {
                     self.robot.pos = proposed_robot_move;
                 }
+                self.visual_plot(&instruction).expect("TODO: panic message");
+                self.plot_sequence += 1;
             }
         }
 
@@ -173,7 +191,7 @@ mod tests {
                         // if box { check if box can move, move if yes}
                         Obstacle::Box => {
                             let mut move_list: Vec<Point<usize>> = Vec::new();
-                            
+                            // todo this is unclear and uses too much incrementing
                             let mut next_move = proposed_move;
                             match instruction {
                                 Direction::North => {
@@ -187,6 +205,8 @@ mod tests {
                                     // Overlapping box to NE
                                     next_move.x += 1;
                                     move_list.push(next_move);
+                                    // reset
+                                    next_move.x -= 1;
                                 }
                                 Direction::East => {
                                     // Adjacent box to East
@@ -204,6 +224,8 @@ mod tests {
                                     // Overlapping box to SE
                                     next_move.x += 1;
                                     move_list.push(next_move);
+                                    // reset
+                                    next_move.x -= 1;
                                 }
                                 Direction::West => {
                                     // Adjacent box to East
@@ -237,6 +259,8 @@ mod tests {
         let path = env::current_dir().unwrap();
         println!("The current directory is {}", path.display());
         let mut warehouse = Warehouse::new(file);
+        warehouse.visual_plot(&Direction::North).unwrap();
+        warehouse.plot_sequence += 1;
         warehouse.move_robot();
         println!("Robot moves = {}", warehouse.plot_sequence);
         let mut res = 0;
