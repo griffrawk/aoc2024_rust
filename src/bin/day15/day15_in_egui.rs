@@ -2,10 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use aocutils::point::Point;
-use eframe::egui::{self, Pos2};
+use eframe::egui::{self, Align, Layout, Pos2};
 use eframe::emath::Vec2;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
+use std::time::Duration;
 
 pub fn egui_main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -57,6 +58,8 @@ struct Warehouse {
     instructions: Vec<Direction>,
     instruction_queue: VecDeque<Direction>,
     iterations: usize,
+    delay: usize,
+    running: bool,
 }
 
 // fixme
@@ -119,6 +122,8 @@ impl Default for Warehouse {
             instructions,
             instruction_queue,
             iterations: 0,
+            delay: 0,
+            running: true,
         }
     }
 }
@@ -185,9 +190,16 @@ impl eframe::App for Warehouse {
             if top_ui.button("Reset Warehouse").clicked() {
                 self.reset_warehouse();
             }
-            top_ui.horizontal(|ui|{
-                ui.label(format!("Iterations: {}", self.iterations));
-            })
+            // ugh!
+            top_ui.columns(3,|cols| {
+                cols[0].vertical_centered_justified(|ui| ui.label(format!("Iterations: {}", self.iterations)));
+                cols[1].vertical_centered_justified(|ui| {
+                    if ui.button("Stop / Start").clicked() {
+                        self.running = !self.running;
+                    }
+                });
+                cols[2].vertical_centered_justified(|ui| ui.add(egui::Slider::new(&mut self.delay, 0..=1000).text("Delay ms")));
+            });
         });
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
@@ -252,11 +264,14 @@ impl eframe::App for Warehouse {
 
         // call modified robot move, take each instruction as a seq, then display warehouse
         // on next loop
-        if let Some(i) = self.instruction_queue.pop_front() {
-            self.move_robot(i);
-            self.iterations += 1;
+        if self.running {
+            if let Some(i) = self.instruction_queue.pop_front() {
+                self.move_robot(i);
+                self.iterations += 1;
+            }
         }
 
-        ctx.request_repaint();
+        // todo get a better way to animate & delay
+        ctx.request_repaint_after(Duration::from_millis(self.delay as u64));
     }
 }
