@@ -180,6 +180,7 @@ impl Warehouse {
                     }
                 }
             }
+            // No obstacle, free to move
             None => true,
         }
     }
@@ -188,11 +189,12 @@ impl Warehouse {
 impl eframe::App for Warehouse {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("Top").show(ctx, |top_ui| {
-            // todo space the panel out a bit, put counter in here and a slider to control speed
             if top_ui.button("Reset Warehouse").clicked() {
                 self.reset_warehouse();
             }
-            // ugh!
+            // todo ugh! egui has some weirdness with layout esp using the full width,
+            //  so I'm using columns. However this makes the stop / start button elongated
+            //  and a bit ugly.
             top_ui.columns(3, |cols| {
                 cols[0].vertical_centered_justified(|ui| {
                     ui.label(format!("Iterations: {}", self.iterations))
@@ -277,7 +279,7 @@ impl eframe::App for Warehouse {
         // call modified robot move, take each instruction as a seq, then display warehouse
         // on next loop
         // instead of trying to slow it down, instead we check whether enough time has elapsed
-        // since the last warehouse update. if so, then we run it and request refresh
+        // since the last warehouse update. if so, then we run it
 
         let delta = ctx.input(|i| i.time);
         if delta - self.delta > self.delay / 1000.0 {
