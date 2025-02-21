@@ -90,15 +90,15 @@ mod tests {
         }
 
         fn visual_plot(&mut self, instruction: &Direction) -> Result<(), Box<dyn std::error::Error>> {
-            let out = format!("{}_{}_{:06}{}", 
+            let out = format!("{}_{:06}_{}{}", 
                                 OUTPUT_FILENAME,
+                                self.plot_sequence, 
                                 match instruction {
                                     Direction::North => '^',
                                     Direction::East => '>',
                                     Direction::South => 'v',
                                     Direction::West => '<',
                                 },
-                                self.plot_sequence, 
                                 ".png");
             let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
@@ -136,38 +136,50 @@ mod tests {
                 
                 let mut move_list: Vec<Point<usize>> = Vec::new();
                 let mut proposed_robot_move = self.robot.pos;
-                // more to check when moving north or south, push 2 checks,
+                let mut obstacle_check = self.robot.pos;
+                // more to check when moving north or south, push 3 checks,
                 // otherwise 1 check each for East, West
-                // todo this is unclear and uses too much incrementing
                 match instruction {
                     Direction::North => {
                         proposed_robot_move.y -= 1;
-                        move_list.push(proposed_robot_move);
-                        proposed_robot_move.x -= 1;
-                        move_list.push(proposed_robot_move);
-                        // reset
-                        proposed_robot_move.x += 1;
-                    }
+                        
+                        //    []
+                        // ^  @     x + 0, y + -1
+                        obstacle_check.y -= 1;
+                        move_list.push(obstacle_check);
+                        
+                        //   []
+                        // ^  @     x + -1, y + -1
+                        obstacle_check.x -= 1;
+                        move_list.push(obstacle_check);
+                    },
                     Direction::East => {
                         proposed_robot_move.x += 1;
-                        move_list.push(proposed_robot_move);
-                    }
+                        
+                        // > @[]    x + 1, y + 0
+                        obstacle_check.x += 1;
+                        move_list.push(obstacle_check);
+                    },
                     Direction::South => {
                         proposed_robot_move.y += 1;
-                        move_list.push(proposed_robot_move);
-                        proposed_robot_move.x -= 1;
-                        move_list.push(proposed_robot_move);
-                        // reset
-                        proposed_robot_move.x += 1;
-                    }
+                        
+                        // v  @
+                        //    []    x + 0, y + 1
+                        obstacle_check.y += 1;
+                        move_list.push(obstacle_check);
+                        
+                        // v  @
+                        //   []     x + -1, y + 1
+                        obstacle_check.x -= 1;
+                        move_list.push(obstacle_check);
+                    },
                     Direction::West => {
-                        // look for an obstacle x - 2
-                        // but this is then moving the box by -2,
-                        // when it only should move by -1
-                        proposed_robot_move.x -= 2;
-                        move_list.push(proposed_robot_move);
-                        proposed_robot_move.x += 1;
-                    }
+                        proposed_robot_move.x -= 1;
+                        
+                        // < []@    x - 1, y + 0
+                        obstacle_check.x -= 2;
+                        move_list.push(obstacle_check);
+                    },
                 }
                 // Process each move, only move robot if all true
                 let res: Vec<bool> = move_list
@@ -191,47 +203,61 @@ mod tests {
                         // if box { check if box can move, move if yes}
                         Obstacle::Box => {
                             let mut move_list: Vec<Point<usize>> = Vec::new();
-                            // todo this is unclear and uses too much incrementing
                             let mut next_move = proposed_move;
+                            let mut obstacle_check = proposed_move;
                             match instruction {
                                 Direction::North => {
                                     next_move.y -= 1;
-                                    // Overlapping box to NW
-                                    next_move.x -= 1;
-                                    move_list.push(next_move);
-                                    // Box to N
-                                    next_move.x += 1;
-                                    move_list.push(next_move);
-                                    // Overlapping box to NE
-                                    next_move.x += 1;
-                                    move_list.push(next_move);
-                                    // reset
-                                    next_move.x -= 1;
-                                }
+
+                                    //   []
+                                    // ^  []     x + -1, y + -1
+                                    obstacle_check.x -= 1;
+                                    obstacle_check.y -= 1;
+                                    move_list.push(obstacle_check);
+
+                                    //   []
+                                    // ^ []     x + 0, y + -1
+                                    obstacle_check.x += 1;
+                                    move_list.push(obstacle_check);
+                                    
+                                    //    []
+                                    // ^ []     x + 1, y + -1
+                                    obstacle_check.x += 1;
+                                    move_list.push(obstacle_check);
+                                },
                                 Direction::East => {
-                                    // Adjacent box to East
-                                    next_move.x += 2;
-                                    move_list.push(next_move);
-                                }
+                                    next_move.x += 1;
+
+                                    // > [][]    x + 1, y + 0
+                                    obstacle_check.x += 1;
+                                    move_list.push(obstacle_check);
+                                },
                                 Direction::South => {
                                     next_move.y += 1;
-                                    // Overlapping box to SW
-                                    next_move.x -= 1;
-                                    move_list.push(next_move);
-                                    // Box to S
-                                    next_move.x += 1;
-                                    move_list.push(next_move);
-                                    // Overlapping box to SE
-                                    next_move.x += 1;
-                                    move_list.push(next_move);
-                                    // reset
-                                    next_move.x -= 1;
-                                }
+
+                                    // v  []
+                                    //   []    x + -1, y + 1
+                                    obstacle_check.x -= 1;
+                                    obstacle_check.y += 1;
+                                    move_list.push(obstacle_check);
+
+                                    // v  []
+                                    //    []     x + 0, y + 1
+                                    obstacle_check.x += 1;
+                                    move_list.push(obstacle_check);
+                                    
+                                    // v  []
+                                    //     []     x + 0, y + 1
+                                    obstacle_check.x += 1;
+                                    move_list.push(obstacle_check);
+                                },
                                 Direction::West => {
-                                    // Adjacent box to East
-                                    next_move.x -= 2;
-                                    move_list.push(next_move);
-                                }
+                                    next_move.x -= 1;
+
+                                    // < [][]    x - 2, y + 0
+                                    obstacle_check.x -= 2;
+                                    move_list.push(obstacle_check);
+                                },
                             }
                             // Process each move, only move box if all true
                             let res: Vec<bool> = move_list
