@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use aocutils::point::Point;
-use eframe::egui::{self, Align, Layout, Pos2};
+use eframe::egui::{self, Pos2};
 use eframe::emath::Vec2;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
@@ -26,11 +26,11 @@ pub fn egui_main() -> Result<(), eframe::Error> {
     )
 }
 
-// the model, this would be the warehouse from the puzzle code
-// todo change Point references to the egui Point probably
+// The model, this is the warehouse from the puzzle code
 #[derive(Debug, Clone, Default)]
 struct Robot {
     pos: Point<usize>,
+    moved_successfully: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -148,6 +148,9 @@ impl Warehouse {
 
         if self.move_obstacle(proposed_robot_move, instruction) {
             self.robot.pos = proposed_robot_move;
+            self.robot.moved_successfully = true;
+        } else {
+            self.robot.moved_successfully = false;
         }
     }
 
@@ -191,44 +194,49 @@ impl eframe::App for Warehouse {
                 self.reset_warehouse();
             }
             // ugh!
-            top_ui.columns(3,|cols| {
-                cols[0].vertical_centered_justified(|ui| ui.label(format!("Iterations: {}", self.iterations)));
+            top_ui.columns(3, |cols| {
+                cols[0].vertical_centered_justified(|ui| {
+                    ui.label(format!("Iterations: {}", self.iterations))
+                });
                 cols[1].vertical_centered_justified(|ui| {
                     if ui.button("Stop / Start").clicked() {
                         self.running = !self.running;
                     }
                 });
-                cols[2].vertical_centered_justified(|ui| ui.add(egui::Slider::new(&mut self.delay, 0..=1000).text("Delay ms")));
+                cols[2].vertical_centered_justified(|ui| {
+                    ui.add(egui::Slider::new(&mut self.delay, 0..=200).text("Delay ms"))
+                });
             });
         });
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
                 
-                let phys_pos = |pos: Point<usize>| -> (Pos2, f32) {
-                    let canvas_dim = canvas_ui.max_rect();
-                    // return centre position, increment (to base radii etc. on)
-                    let increment = (canvas_dim.width() / self.max_x as f32)
-                        .min(canvas_dim.height() / self.max_y as f32);
+                let pos_on_canvas = | wh_pos: Point<usize> | -> (Pos2, f32) {
+                    // input warehouse coordinates
+                    // return canvas points centre position, ui canvas spacing
+                    let canvas_rect = canvas_ui.max_rect();
+                    let spacing = (canvas_rect.width() / self.max_x as f32)
+                        .min(canvas_rect.height() / self.max_y as f32);
                     (
                         Pos2 {
-                            x: increment * pos.x as f32 + canvas_dim.min.x + increment / 2.0,
-                            y: increment * pos.y as f32 + canvas_dim.min.y + increment / 2.0,
+                            x: spacing * wh_pos.x as f32 + canvas_rect.min.x + spacing / 2.0,
+                            y: spacing * wh_pos.y as f32 + canvas_rect.min.y + spacing / 2.0,
                         },
-                        increment,
+                        spacing,
                     )
                 };
 
                 // Walls and boxes
                 for (pos, obstacle) in &self.locations {
-                    let (canvas_pos, increment) = phys_pos(*pos);
+                    let (canvas_pos, spacing) = pos_on_canvas(*pos);
                     match obstacle {
                         Obstacle::Wall => {
                             canvas_ui.painter().rect_filled(
                                 egui::Rect::from_center_size(
                                     canvas_pos,
                                     Vec2 {
-                                        x: increment,
-                                        y: increment,
+                                        x: spacing,
+                                        y: spacing,
                                     },
                                 ),
                                 egui::CornerRadius::default(),
@@ -241,11 +249,11 @@ impl eframe::App for Warehouse {
                                     canvas_pos,
                                     Vec2 {
                                         // 2 point gap
-                                        x: increment - 2.0,
-                                        y: increment - 2.0,
+                                        x: spacing - 2.0,
+                                        y: spacing - 2.0,
                                     },
                                 ),
-                                egui::CornerRadius::from(increment / 5.0f32),
+                                egui::CornerRadius::from(spacing / 5.0f32),
                                 egui::Color32::GREEN,
                             );
                         }
@@ -253,12 +261,19 @@ impl eframe::App for Warehouse {
                 }
 
                 // Robot
-                let (robot_pos, increment) = phys_pos(self.robot.pos);
-
-                canvas_ui
-                    .painter()
-                    // 2 point gap
-                    .circle_filled(robot_pos, increment / 2.0 - 2.0, egui::Color32::CYAN);
+                let (robot_pos, increment) = pos_on_canvas(self.robot.pos);
+                if self.robot.moved_successfully {
+                    canvas_ui
+                        .painter()
+                        // 2 point gap
+                        .circle_filled(robot_pos, increment * 0.5 - 2.0, egui::Color32::CYAN);
+                } else {
+                    // robot turns the air BLUE if it can't move
+                    canvas_ui
+                        .painter()
+                        // 2 point gap
+                        .circle_filled(robot_pos, increment * 0.8, egui::Color32::BLUE);
+                }
             });
         });
 
