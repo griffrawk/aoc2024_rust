@@ -57,7 +57,7 @@ struct Warehouse {
     instructions: Vec<Direction>,
     instruction_queue: VecDeque<Direction>,
     iterations: usize,
-    delay: usize,
+    delay: f64,
     running: bool,
     delta: f64,
 }
@@ -122,7 +122,7 @@ impl Warehouse {
             instructions,
             instruction_queue,
             iterations: 0,
-            delay: 0,
+            delay: 50.0,
             running: true,
             delta: 0.0,
         }
@@ -203,7 +203,7 @@ impl eframe::App for Warehouse {
                     }
                 });
                 cols[2].vertical_centered_justified(|ui| {
-                    ui.add(egui::Slider::new(&mut self.delay, 0..=500).text("Delay ms"))
+                    ui.add(egui::Slider::new(&mut self.delay, 0.0..=500.0).text("Delay ms"))
                 });
             });
         });
@@ -280,7 +280,7 @@ impl eframe::App for Warehouse {
         // since the last warehouse update. if so, then we run it and request refresh
 
         let delta = ctx.input(|i| i.time);
-        if delta - self.delta > self.delay as f64 / 1000.0 {
+        if delta - self.delta > self.delay / 1000.0 {
             self.delta = delta;
             if self.running {
                 if let Some(i) = self.instruction_queue.pop_front() {
