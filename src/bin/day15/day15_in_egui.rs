@@ -265,13 +265,11 @@ impl eframe::App for Warehouse {
                 if self.robot.moved_successfully {
                     canvas_ui
                         .painter()
-                        // 2 point gap
                         .circle_filled(robot_pos, increment * 0.5, egui::Color32::CYAN);
                 } else {
                     // robot turns the air BLUE if it can't move
                     canvas_ui
                         .painter()
-                        // 2 point gap
                         .circle_filled(robot_pos, increment * 0.8, egui::Color32::BLUE);
                 }
             });
