@@ -33,7 +33,7 @@ mod tests {
         robot: Robot,
         locations: HashMap<Point<usize>, Obstacle>,
         instructions: Vec<Direction>,
-        plot_sequence: isize,
+        plot_sequence: usize,
     }
 
     impl Warehouse {
@@ -85,7 +85,7 @@ mod tests {
                 robot,
                 locations,
                 instructions,
-                plot_sequence: -1,
+                plot_sequence: 0,
             }
         }
 
@@ -228,8 +228,8 @@ mod tests {
                                 Direction::East => {
                                     next_move.x += 1;
 
-                                    // > [][]    x + 1, y + 0
-                                    obstacle_check.x += 1;
+                                    // > [][]    x + 2, y + 0
+                                    obstacle_check.x += 2;
                                     move_list.push(obstacle_check);
                                 },
                                 Direction::South => {
@@ -247,7 +247,7 @@ mod tests {
                                     move_list.push(obstacle_check);
                                     
                                     // v  []
-                                    //     []     x + 0, y + 1
+                                    //     []     x + 1, y + 1
                                     obstacle_check.x += 1;
                                     move_list.push(obstacle_check);
                                 },
@@ -285,8 +285,6 @@ mod tests {
         let path = env::current_dir().unwrap();
         println!("The current directory is {}", path.display());
         let mut warehouse = Warehouse::new(file);
-        warehouse.visual_plot(&Direction::North).unwrap();
-        warehouse.plot_sequence += 1;
         warehouse.move_robot();
         println!("Robot moves = {}", warehouse.plot_sequence);
         let mut res = 0;
