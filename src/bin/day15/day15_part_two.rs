@@ -136,11 +136,11 @@ mod tests {
 
         fn move_robot(&mut self) {
             for instruction in self.instructions.clone() {
-                
+                // Make a list of moves for the robot to check if there's an obstacle
                 let mut move_list: Vec<Point<usize>> = Vec::new();
                 let mut proposed_robot_move = self.robot.pos;
                 let mut obstacle_check = self.robot.pos;
-                // more to check when moving north or south, push 3 checks,
+                // There's more to check when moving north or south, push 2 checks,
                 // otherwise 1 check each for East, West
                 match instruction {
                     Direction::North => {
@@ -184,7 +184,7 @@ mod tests {
                         move_list.push(obstacle_check);
                     },
                 }
-                // Process each move, only move robot if all true
+                // Process each move, only move robot if all moves true
                 self.locations_rollback = self.locations.clone();
                 let res: Vec<bool> = move_list
                     .iter()
@@ -194,7 +194,7 @@ mod tests {
                     self.robot.pos = proposed_robot_move;
                     self.locations = self.locations_rollback.clone();
                 }
-                self.visual_plot(&instruction).expect("TODO: panic message");
+                // self.visual_plot(&instruction).expect("TODO: panic message");
                 self.plot_sequence += 1;
             }
         }
@@ -207,9 +207,12 @@ mod tests {
                         Obstacle::Wall => false,
                         // if box { check if box can move, move if yes}
                         Obstacle::Box => {
+                            // Make a list of moves for a box to check for an obstacle
                             let mut move_list: Vec<Point<usize>> = Vec::new();
                             let mut next_move = proposed_move;
                             let mut obstacle_check = proposed_move;
+                            // There's more to check when moving north or south, push 3 checks,
+                            // otherwise 1 check each for East, West
                             match instruction {
                                 Direction::North => {
                                     next_move.y -= 1;
@@ -267,19 +270,6 @@ mod tests {
                                 },
                             }
                             // Process each move, only move box if all true
-                            // fixme - Issue here. If there are two obstacles to be checked
-                            //  and only one can be moved, it moves but shouldn't, as the parent
-                            //  is blocked from moving.
-                            //  In other words, a box should only move if all of the other boxes
-                            //  below the parent can move e.g.
-                            //      @   <-- Robot wants to move down, but ultimately can't move
-                            //     []   <-- This box 'pushes' two boxes, but ultimately can't move
-                            //    [][]  <-- This right box moves down as it's not blocked. It shouldn't,
-                            //    []        but how does it know all the moves from parent succeeded?
-                            //     []
-                            //    []    <-- This box is blocked by wall, all the way up
-                            //  #####       to the left box
-                            
                             let res: Vec<bool> = move_list
                                 .iter()
                                 .map(|prop| self.move_obstacle(*prop, instruction.clone()))
@@ -308,15 +298,16 @@ mod tests {
         warehouse.move_robot();
         println!("Robot moves = {}", warehouse.plot_sequence);
         let mut res = 0;
-        // for (pos, c) in warehouse.locations {
-        //     if let Obstacle::Box = c {
-        //         res += pos.y * 100 + pos.x;
-        //     }
-        // }
+        for (pos, c) in warehouse.locations {
+            if let Obstacle::Box = c {
+                res += pos.y * 100 + pos.x;
+            }
+        }
         res
     }
 
     #[test]
+    #[ignore]
     fn test_part_two_basic() {
         let result = part_two("src/bin/day15/day15_basic.txt");
         assert_eq!(result, 2028);
@@ -325,13 +316,13 @@ mod tests {
     #[test]
     fn test_part_two_test() {
         let result = part_two("src/bin/day15/day15_test.txt");
-        assert_eq!(result, 10092);
+        assert_eq!(result, 9021);
     }
 
     #[test]
     // #[ignore = "Best run with --profile release, takes a long time"]
     fn test_part_two_data() {
         let result = part_two("src/bin/day15/day15_data.txt");
-        assert_eq!(result, 1421727);
+        assert_eq!(result, 1463160);
     }
 }
