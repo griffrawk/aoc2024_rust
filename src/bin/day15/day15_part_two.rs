@@ -32,6 +32,7 @@ mod tests {
     struct Warehouse {
         robot: Robot,
         locations: HashMap<Point<usize>, Obstacle>,
+        locations_rollback: HashMap<Point<usize>, Obstacle>,
         instructions: Vec<Direction>,
         plot_sequence: usize,
     }
@@ -40,6 +41,7 @@ mod tests {
         fn new(file: &str) -> Self {
             let mut robot: Robot = Default::default();
             let mut locations: HashMap<Point<usize>, Obstacle> = HashMap::new();
+            let locations_rollback: HashMap<Point<usize>, Obstacle> = HashMap::new();
             let mut instructions = Vec::new();
             let contents = fs::read_to_string(file).expect("Can't read the file");
             let mut map = true;
@@ -84,6 +86,7 @@ mod tests {
             Warehouse {
                 robot,
                 locations,
+                locations_rollback,
                 instructions,
                 plot_sequence: 0,
             }
@@ -176,18 +179,20 @@ mod tests {
                     Direction::West => {
                         proposed_robot_move.x -= 1;
                         
-                        // < []@    x - 1, y + 0
+                        // < []@    x + -2, y + 0
                         obstacle_check.x = self.robot.pos.x - 2;
                         move_list.push(obstacle_check);
                     },
                 }
                 // Process each move, only move robot if all true
+                self.locations_rollback = self.locations.clone();
                 let res: Vec<bool> = move_list
                     .iter()
                     .map(|prop| self.move_obstacle(*prop, instruction.clone()))
                     .collect();
                 if !res.contains(&false) {
                     self.robot.pos = proposed_robot_move;
+                    self.locations = self.locations_rollback.clone();
                 }
                 self.visual_plot(&instruction).expect("TODO: panic message");
                 self.plot_sequence += 1;
@@ -195,7 +200,7 @@ mod tests {
         }
 
         fn move_obstacle(&mut self, proposed_move: Point<usize>, instruction: Direction) -> bool {
-            match self.locations.get(&proposed_move) {
+            match self.locations_rollback.get(&proposed_move) {
                 Some(obstacle) => {
                     match obstacle {
                         // wall blocks movement
@@ -281,9 +286,9 @@ mod tests {
                                 .collect();
                             if !res.contains(&false) {
                                 // insert box at next_move
-                                self.locations.entry(next_move).or_insert(Obstacle::Box);
+                                self.locations_rollback.entry(next_move).or_insert(Obstacle::Box);
                                 // remove the box at proposed_move
-                                self.locations.remove(&proposed_move);
+                                self.locations_rollback.remove(&proposed_move);
                                 true
                             } else {
                                 false
