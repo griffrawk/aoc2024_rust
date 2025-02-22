@@ -267,12 +267,12 @@ mod tests {
                             //  is blocked from moving.
                             //  In other words, a box should only move if all of the other boxes
                             //  below the parent can move e.g.
-                            //      @   <-- robot wants to move down
-                            //     []   <-- this box 'pushes' two boxes
-                            //    [][]  <-- this right box moves down as it's not blocked, but
-                            //    []        how does it know all the moves from parent succeeded?
+                            //      @   <-- Robot wants to move down, but ultimately can't move
+                            //     []   <-- This box 'pushes' two boxes, but ultimately can't move
+                            //    [][]  <-- This right box moves down as it's not blocked. It shouldn't,
+                            //    []        but how does it know all the moves from parent succeeded?
                             //     []
-                            //    []    <-- but this box is blocked by wall, all the way up
+                            //    []    <-- This box is blocked by wall, all the way up
                             //  #####       to the left box
                             
                             let res: Vec<bool> = move_list
