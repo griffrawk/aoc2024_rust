@@ -7,7 +7,7 @@ mod tests {
     use plotters::coord::types::RangedCoordi32;
     use plotters::prelude::*;
     
-    const OUTPUT_FILENAME: &str = "src/bin/day15/output_part2/day15_gen";
+    const OUTPUT_FILENAME: &str = "src/bin/day15/output_part2_data/day15_gen";
 
     #[derive(Debug, Clone, Default)]
     struct Robot {
@@ -104,20 +104,20 @@ mod tests {
 
             root_area.fill(&WHITE).unwrap();
             let root_area = root_area.apply_coord_spec(
-                Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..30, 0..30, (0..1024, 0..1024)),
+                Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..100, 0..100, (0..1024, 0..1024)),
             );
 
             let wall_block = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Rectangle::new([(0, 0), (64, 32)], ShapeStyle::from(&RED).filled());
+                    + Rectangle::new([(0, 0), (18, 9)], ShapeStyle::from(&RED).filled());
             };
             let box_block = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Rectangle::new([(0, 0), (64, 32)], ShapeStyle::from(&GREEN).filled());
+                    + Rectangle::new([(0, 0), (18, 9)], ShapeStyle::from(&GREEN).filled());
             };
             let robot = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
-                    + Circle::new((16, 16), 16, ShapeStyle::from(&BLUE).filled());
+                    + Circle::new((4, 4), 4, ShapeStyle::from(&BLUE).filled());
             };
 
             for (pos, obstacle) in &self.locations {
@@ -145,19 +145,19 @@ mod tests {
                         
                         //    []
                         // ^  @     x + 0, y + -1
-                        obstacle_check.y -= 1;
+                        obstacle_check.y = self.robot.pos.y - 1;
                         move_list.push(obstacle_check);
                         
                         //   []
                         // ^  @     x + -1, y + -1
-                        obstacle_check.x -= 1;
+                        obstacle_check.x = self.robot.pos.x - 1;
                         move_list.push(obstacle_check);
                     },
                     Direction::East => {
                         proposed_robot_move.x += 1;
                         
                         // > @[]    x + 1, y + 0
-                        obstacle_check.x += 1;
+                        obstacle_check.x = self.robot.pos.x + 1;
                         move_list.push(obstacle_check);
                     },
                     Direction::South => {
@@ -165,19 +165,19 @@ mod tests {
                         
                         // v  @
                         //    []    x + 0, y + 1
-                        obstacle_check.y += 1;
+                        obstacle_check.y = self.robot.pos.y + 1;
                         move_list.push(obstacle_check);
                         
                         // v  @
                         //   []     x + -1, y + 1
-                        obstacle_check.x -= 1;
+                        obstacle_check.x = self.robot.pos.x - 1;
                         move_list.push(obstacle_check);
                     },
                     Direction::West => {
                         proposed_robot_move.x -= 1;
                         
                         // < []@    x - 1, y + 0
-                        obstacle_check.x -= 2;
+                        obstacle_check.x = self.robot.pos.x - 2;
                         move_list.push(obstacle_check);
                     },
                 }
@@ -211,25 +211,26 @@ mod tests {
 
                                     //   []
                                     // ^  []     x + -1, y + -1
-                                    obstacle_check.x -= 1;
-                                    obstacle_check.y -= 1;
+                                    obstacle_check.x = proposed_move.x - 1;
+                                    obstacle_check.y = proposed_move.y - 1;
                                     move_list.push(obstacle_check);
 
                                     //   []
                                     // ^ []     x + 0, y + -1
-                                    obstacle_check.x += 1;
+                                    obstacle_check.x = proposed_move.x;
                                     move_list.push(obstacle_check);
                                     
                                     //    []
                                     // ^ []     x + 1, y + -1
-                                    obstacle_check.x += 1;
+                                    obstacle_check.x = proposed_move.x + 1;
                                     move_list.push(obstacle_check);
                                 },
                                 Direction::East => {
                                     next_move.x += 1;
 
                                     // > [][]    x + 2, y + 0
-                                    obstacle_check.x += 2;
+                                    obstacle_check.x = proposed_move.x + 2;
+                                    obstacle_check.y = proposed_move.y;
                                     move_list.push(obstacle_check);
                                 },
                                 Direction::South => {
@@ -237,29 +238,43 @@ mod tests {
 
                                     // v  []
                                     //   []    x + -1, y + 1
-                                    obstacle_check.x -= 1;
-                                    obstacle_check.y += 1;
+                                    obstacle_check.x = proposed_move.x - 1;
+                                    obstacle_check.y = proposed_move.y + 1;
                                     move_list.push(obstacle_check);
 
                                     // v  []
                                     //    []     x + 0, y + 1
-                                    obstacle_check.x += 1;
+                                    obstacle_check.x = proposed_move.x;
                                     move_list.push(obstacle_check);
                                     
                                     // v  []
                                     //     []     x + 1, y + 1
-                                    obstacle_check.x += 1;
+                                    obstacle_check.x = proposed_move.x + 1;
                                     move_list.push(obstacle_check);
                                 },
                                 Direction::West => {
                                     next_move.x -= 1;
 
                                     // < [][]    x - 2, y + 0
-                                    obstacle_check.x -= 2;
+                                    obstacle_check.x = proposed_move.x - 2;
+                                    obstacle_check.y = proposed_move.y;
                                     move_list.push(obstacle_check);
                                 },
                             }
                             // Process each move, only move box if all true
+                            // fixme - Issue here. If there are two obstacles to be checked
+                            //  and only one can be moved, it moves but shouldn't, as the parent
+                            //  is blocked from moving.
+                            //  In other words, a box should only move if all of the other boxes
+                            //  below the parent can move e.g.
+                            //      @   <-- robot wants to move down
+                            //     []   <-- this box 'pushes' two boxes
+                            //    [][]  <-- this right box moves down as it's not blocked, but
+                            //    []        how does it know all the moves from parent succeeded?
+                            //     []
+                            //    []    <-- but this box is blocked by wall, all the way up
+                            //  #####       to the left box
+                            
                             let res: Vec<bool> = move_list
                                 .iter()
                                 .map(|prop| self.move_obstacle(*prop, instruction.clone()))
@@ -309,7 +324,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Best run with --profile release, takes a long time"]
+    // #[ignore = "Best run with --profile release, takes a long time"]
     fn test_part_two_data() {
         let result = part_two("src/bin/day15/day15_data.txt");
         assert_eq!(result, 1421727);
