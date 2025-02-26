@@ -35,19 +35,25 @@ impl Graph {
         let mut node_list = HashMap::new();
         let mut walls = HashSet::new();
         let mut maze: Vec<Vec<char>> = Vec::new();
+        
+        // process the grid into adjacency_list & node_list
         for (y, row) in fs::read_to_string(file)
             .expect("Can't read the file")
             .lines()
             .enumerate()
         {
+            // convert from array of &str into 2d array of chars, so we can 
+            // perform cardinal point lookups on all the data in memory
             maze.push(row.chars().collect());
             xrange = 0..row.len();
             yrange = 0..y + 1;
         }
+        
         for (y, row) in maze.iter().enumerate() {
             for (x, c) in row.iter().enumerate() {
                 match c {
                     '.' | 'S' | 'E' => {
+                        // record start and end coords
                         if *c == 'S' {
                             start.x = x;
                             start.y = y;
@@ -56,8 +62,9 @@ impl Graph {
                             end.x = x;
                             end.y = y;
                         }
+                        
+                        // process edges from cardinal points where not a wall
                         let mut edges: Vec<Point<usize>> = Vec::new();
-                        // let mut edges: Vec<(Point<usize>, EdgeData)> = Vec::new();
                         for cardinal in (Point { x: x as i32, y: y as i32 }).cardinal_points() {
                             let cardinal = Point { x: cardinal.x.to_usize().unwrap(), y: cardinal.y.to_usize().unwrap() };
                             if xrange.contains(&cardinal.x) && yrange.contains(&cardinal.y) {
@@ -69,10 +76,14 @@ impl Graph {
                             }
                         }
                         let node = Point { x, y };
+                        // v: (cost (initally usize::MAX), came_from node (for track-back
+                        // at the end) to get path. not to be confused with previous node in the
+                        // priority queue which is just to track previous for turn detection)
                         node_list.insert(node, (usize::MAX, None));
                         adjacency_list.insert(node, edges);
                     },
                     _ => {
+                        // store walls for the visuals
                         walls.insert(Point { x, y });
                     },
                 }
@@ -140,12 +151,16 @@ impl Graph {
     }
 
     fn show_path(&mut self) -> Vec<Point<usize>> {
+        // Assemble a list of path nodes from the end to start, and referring to
+        // each node's came_from to find previous node
         let mut res = Vec::new();
         let mut next = self.node_list[&self.end].1.unwrap();
         while next != self.start {
             res.push(next);
             next = self.node_list[&next].1.unwrap();
         }
+        // finally push start on list
+        res.push(next);
         res
     }
 
