@@ -14,14 +14,14 @@ const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
 #[derive(Debug)]
 struct Graph {
-    adjacency_list: HashMap<Point<usize>, Vec<Point<usize>>>,
-    node_list: HashMap<Point<usize>, (usize, Option<Point<usize>>)>,
+    adjacency_list: HashMap<Point<i32>, Vec<Point<i32>>>,
+    node_list: HashMap<Point<i32>, (usize, Option<Point<i32>>)>,
     // for the visuals
-    walls: HashSet<Point<usize>>,
-    xrange: Range<usize>,
-    yrange: Range<usize>,
-    start: Point<usize>,
-    end: Point<usize>,
+    walls: HashSet<Point<i32>>,
+    xrange: Range<i32>,
+    yrange: Range<i32>,
+    start: Point<i32>,
+    end: Point<i32>,
     plot_sequence: usize,
 }
 
@@ -42,49 +42,48 @@ impl Graph {
             .lines()
             .enumerate()
         {
+            let iy = y as i32;
             // convert from array of &str into 2d array of chars, so we can 
             // perform cardinal point lookups on all the data in memory
             maze.push(row.chars().collect());
-            xrange = 0..row.len();
-            yrange = 0..y + 1;
+            xrange = 0..row.len() as i32;
+            yrange = 0..iy + 1;
         }
         
         for (y, row) in maze.iter().enumerate() {
+            let iy = y as i32;
             for (x, c) in row.iter().enumerate() {
+                let ix = x as i32;
+                let pos = Point { x: ix, y: iy };
                 match c {
                     '.' | 'S' | 'E' => {
                         // record start and end coords
                         if *c == 'S' {
-                            start.x = x;
-                            start.y = y;
+                            start = pos;
                         }
                         if *c == 'E' {
-                            end.x = x;
-                            end.y = y;
+                            end = pos;
                         }
-                        
                         // process edges from cardinal points where not a wall
-                        let mut edges: Vec<Point<usize>> = Vec::new();
-                        for cardinal in (Point { x: x as i32, y: y as i32 }).cardinal_points() {
-                            let cardinal = Point { x: cardinal.x.to_usize().unwrap(), y: cardinal.y.to_usize().unwrap() };
+                        let mut edges: Vec<Point<i32>> = Vec::new();
+                        for cardinal in pos.cardinal_points() {
                             if xrange.contains(&cardinal.x) && yrange.contains(&cardinal.y) {
-                                let n = maze[cardinal.y][cardinal.x];
+                                let n = maze[cardinal.y.to_usize().unwrap()][cardinal.x.to_usize().unwrap()];
                                 match n {
                                     '.' | 'S' | 'E' => edges.push(cardinal),
                                     _ => (),
                                 }
                             }
                         }
-                        let node = Point { x, y };
                         // v: (cost (initally usize::MAX), came_from node (for track-back
                         // at the end) to get path. not to be confused with previous node in the
                         // priority queue which is just to track previous for turn detection)
-                        node_list.insert(node, (usize::MAX, None));
-                        adjacency_list.insert(node, edges);
+                        node_list.insert(pos, (usize::MAX, None));
+                        adjacency_list.insert(pos, edges);
                     },
                     _ => {
                         // store walls for the visuals
-                        walls.insert(Point { x, y });
+                        walls.insert(pos);
                     },
                 }
             }
@@ -112,10 +111,10 @@ impl Graph {
 
         // We're at `start`, with a zero cost. node_list already init with usize::MAX, 
         // came_from None
-        // heap contains cost, start, and the previous to start, off west by 1
-        let previous = Point { x: self.start.x - 1, y: self.start.y};
+        // heap contains cost, start, and the previous to start, off west by 1. This
+        // forces the Reindeer to be facing east.
         self.node_list.insert(self.start, (0, None));
-        heap.push(Reverse((0, self.start, previous)));
+        heap.push(Reverse((0, self.start, Point { x: self.start.x - 1, y: self.start.y})));
 
         // Examine the frontier with lower cost nodes first (min-heap)
         while let Some(Reverse((cost, position, previous))) = heap.pop() {
@@ -129,11 +128,10 @@ impl Graph {
             // a lower cost going through this node
             if let Some(edges) = self.adjacency_list.get(&position) {
                 for node in edges {
-                    // need to account for a 90 degree turn here. Use previous, current and
-                    // next points
                     let mut next_cost = cost + 1;
-                    if abs(previous.x as i32 - node.x as i32) > 0 
-                        && abs(previous.y as i32 - node.y as i32) > 0 {
+                    // Need to account for a 90 degree turn here. Use previous and
+                    // next points to check for a change in x and y
+                    if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
                         next_cost += 1000;
                     }
                     // If so, add it to the frontier and continue
@@ -150,7 +148,7 @@ impl Graph {
         None
     }
 
-    fn show_path(&mut self) -> Vec<Point<usize>> {
+    fn show_path(&mut self) -> Vec<Point<i32>> {
         // Assemble a list of path nodes from the end to start, and referring to
         // each node's came_from to find previous node
         let mut res = Vec::new();
@@ -172,14 +170,14 @@ impl Graph {
         let root_area = BitMapBackend::new(&out, (1034, 1034)).into_drawing_area();
 
         root_area.fill(&WHITE).unwrap();
-        let end_x = self.xrange.end as i32;
-        let end_y = self.yrange.end as i32;
+        let end_x = self.xrange.end;
+        let end_y = self.yrange.end;
         let root_area = root_area.apply_coord_spec(
             Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..end_x, 0..end_y, (10..1024, 10..1024)),
         );
 
         // todo This could probably ben done better, but...
-        let block_side = 1024 / self.yrange.end as i32;
+        let block_side = 1024 / self.yrange.end;
         let wall_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
                 + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&BLUE).filled());
@@ -198,14 +196,14 @@ impl Graph {
         };
 
         for pos in self.walls.clone() {
-            root_area.draw(&wall_block(pos.x as i32, pos.y as i32))?;
+            root_area.draw(&wall_block(pos.x, pos.y))?;
 
         }
         for pos in self.show_path() {
-            root_area.draw(&path_block(pos.x as i32, pos.y as i32))?;
+            root_area.draw(&path_block(pos.x, pos.y))?;
         }
-        root_area.draw(&start_block(self.start.x as i32, self.start.y as i32))?;
-        root_area.draw(&end_block(self.end.x as i32, self.end.y as i32))?;
+        root_area.draw(&start_block(self.start.x, self.start.y))?;
+        root_area.draw(&end_block(self.end.x, self.end.y))?;
 
         root_area.present()?;
         Ok(())
