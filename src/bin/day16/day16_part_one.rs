@@ -1,4 +1,4 @@
-use std::cmp::{Ordering, Reverse};
+use std::cmp::Reverse;
 use aocutils::point::Point;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::fs;
@@ -6,6 +6,7 @@ use std::ops::Range;
 use num::{abs, ToPrimitive};
 use plotters::coord::types::RangedCoordi32;
 use plotters::prelude::*;
+use plotters::prelude::full_palette::CYAN_500;
 
 const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
@@ -21,6 +22,7 @@ struct Graph {
     yrange: Range<usize>,
     start: Point<usize>,
     end: Point<usize>,
+    plot_sequence: usize,
 }
 
 impl Graph {
@@ -62,7 +64,6 @@ impl Graph {
                                 let n = maze[cardinal.y][cardinal.x];
                                 match n {
                                     '.' | 'S' | 'E' => edges.push(cardinal),
-                                    // '.' | 'S' | 'E' => edges.push((cardinal, EdgeData::Weight(1))),
                                     _ => (),
                                 }
                             }
@@ -85,10 +86,11 @@ impl Graph {
             yrange,
             start,
             end,
+            plot_sequence: 0,
         }
     }
 
-    // Dijkstra's shortest path algorithm.
+    // Dijkstra's shortest path algorithm. From BinaryHeap docs, modified to the puzzle.
 
     // Start at `start` and use `dist` to track the current shortest distance
     // to each node. This implementation isn't memory-efficient as it may leave duplicate
@@ -97,12 +99,15 @@ impl Graph {
     fn shortest_path(&mut self) -> Option<usize> {
         let mut heap = BinaryHeap::new();
 
-        // We're at `start`, with a zero cost. node_list already init with usize::MAX, came_from None
+        // We're at `start`, with a zero cost. node_list already init with usize::MAX, 
+        // came_from None
+        // heap contains cost, start, and the previous to start, off west by 1
+        let previous = Point { x: self.start.x - 1, y: self.start.y};
         self.node_list.insert(self.start, (0, None));
-        heap.push(Reverse((0, self.start)));
+        heap.push(Reverse((0, self.start, previous)));
 
         // Examine the frontier with lower cost nodes first (min-heap)
-        while let Some(Reverse((cost, position))) = heap.pop() {
+        while let Some(Reverse((cost, position, previous))) = heap.pop() {
             // Alternatively we could have continued to find all shortest paths
             if position == self.end { return Some(cost); }
 
@@ -113,10 +118,16 @@ impl Graph {
             // a lower cost going through this node
             if let Some(edges) = self.adjacency_list.get(&position) {
                 for node in edges {
-                    let next_cost = cost + 1;
-                    let next = Reverse((next_cost, *node));
+                    // need to account for a 90 degree turn here. Use previous, current and
+                    // next points
+                    let mut next_cost = cost + 1;
+                    if abs(previous.x as i32 - node.x as i32) > 0 
+                        && abs(previous.y as i32 - node.y as i32) > 0 {
+                        next_cost += 1000;
+                    }
                     // If so, add it to the frontier and continue
                     if next_cost < self.node_list[&node].0 {
+                        let next = Reverse((next_cost, *node, position));
                         heap.push(next);
                         // Relaxation, we have now found a better way. Update cost and came_from
                         self.node_list.insert(*node, (next_cost, Some(position)));
@@ -139,31 +150,36 @@ impl Graph {
     }
 
     fn visual_plot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let out = format!("{}{}",
+        let out = format!("{}_{:06}{}",
                           OUTPUT_FILENAME,
+                          self.plot_sequence,
                           ".png");
-        let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
+        let root_area = BitMapBackend::new(&out, (1034, 1034)).into_drawing_area();
 
         root_area.fill(&WHITE).unwrap();
+        let end_x = self.xrange.end as i32;
+        let end_y = self.yrange.end as i32;
         let root_area = root_area.apply_coord_spec(
-            Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..15, 0..15, (0..1024, 0..1024)),
+            Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..end_x, 0..end_y, (10..1024, 10..1024)),
         );
 
+        // todo This could probably ben done better, but...
+        let block_side = 1024 / self.yrange.end as i32;
         let wall_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
-                + Rectangle::new([(0, 0), (40, 40)], ShapeStyle::from(&BLUE).filled());
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&BLUE).filled());
         };
         let path_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
-                + Rectangle::new([(0, 0), (40, 40)], ShapeStyle::from(&CYAN).filled());
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&CYAN_500).filled());
         };
         let start_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
-                + Rectangle::new([(0, 0), (40, 40)], ShapeStyle::from(&RED).filled());
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&RED).filled());
         };
         let end_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
-                + Rectangle::new([(0, 0), (40, 40)], ShapeStyle::from(&GREEN).filled());
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&GREEN).filled());
         };
 
         for pos in self.walls.clone() {
@@ -181,24 +197,43 @@ impl Graph {
     }
 }
 
-fn heuristic_distance(pos: Point<usize>, end: Point<usize>) -> usize {
-    (abs(end.x as i32 - pos.x as i32)
-        + abs(end.y as i32 - pos.y as i32))
-        .to_usize()
-        .unwrap_or_default()
-}
-
 #[cfg(test)]
 mod tests {
     use std::env;
     use super::Graph;
 
     #[test]
-    fn test_shortest_path() {
+    fn test_part_one_test_a() {
+        let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
+        let res = graph.shortest_path();
+        graph.visual_plot().unwrap();
+        assert_eq!(res, Some(7036));
+    }
+
+    #[test]
+    fn test_part_one_test_b() {
+        let mut graph = Graph::new("src/bin/day16/day16_test_b.txt");
+        let res = graph.shortest_path();
+        graph.visual_plot().unwrap();
+        assert_eq!(res, Some(11048));
+    }
+
+#[test]
+    fn test_part_one_data() {
+        // to debug cwd when I'm trying to find the png
         println!("Current directory {}", env::current_dir().unwrap().display());
 
-        let mut graph = Graph::new("src/bin/day16/test_graph.txt");
-        assert_eq!(graph.shortest_path(), Some(28));
+        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
+        let res = graph.shortest_path();
         graph.visual_plot().unwrap();
+        assert_eq!(res, Some(107512));
+    }
+
+#[test]
+    fn test_part_one_joost() {
+        let mut graph = Graph::new("src/bin/day16/joost.txt");
+        let res = graph.shortest_path();
+        graph.visual_plot().unwrap();
+        assert_eq!(res, Some(82464));
     }
 }
