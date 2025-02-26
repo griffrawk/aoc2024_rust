@@ -22,6 +22,7 @@ env_logger = { version = "0.11.6", default-features = false, features = [
     "auto-color",
     "humantime",
 ] }
+num = "0.4.3"
 
 [[bin]]
 name = "ferris"
