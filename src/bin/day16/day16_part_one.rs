@@ -6,7 +6,7 @@ use std::ops::Range;
 use num::{abs, ToPrimitive};
 use plotters::coord::types::RangedCoordi32;
 use plotters::prelude::*;
-use plotters::prelude::full_palette::CYAN_500;
+use plotters::prelude::full_palette::{CYAN_200, CYAN_500};
 
 const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
@@ -75,7 +75,7 @@ impl Graph {
                                 }
                             }
                         }
-                        // v: (cost (initally usize::MAX), came_from node (for track-back
+                        // v: (cost (initially usize::MAX), came_from node (for track-back
                         // at the end) to get path. not to be confused with previous node in the
                         // priority queue which is just to track previous for turn detection)
                         node_list.insert(pos, (usize::MAX, None));
@@ -142,6 +142,8 @@ impl Graph {
                         self.node_list.insert(*node, (next_cost, Some(position)));
                     }
                 }
+                self.visual_plot(false).unwrap();
+                self.plot_sequence += 1;
             }
         }
         // Goal not reachable
@@ -162,29 +164,29 @@ impl Graph {
         res
     }
 
-    fn visual_plot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}",
                           OUTPUT_FILENAME,
                           self.plot_sequence,
                           ".png");
-        let root_area = BitMapBackend::new(&out, (1034, 1034)).into_drawing_area();
+        let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
         root_area.fill(&WHITE).unwrap();
         let end_x = self.xrange.end;
         let end_y = self.yrange.end;
         let root_area = root_area.apply_coord_spec(
-            Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..end_x, 0..end_y, (10..1024, 10..1024)),
+            Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..end_x, 0..end_y, (0..1024, 0..1024)),
         );
 
         // todo This could probably ben done better, but...
-        let block_side = 1024 / self.yrange.end;
+        let block_side = 1024 / self.yrange.end + 1;
         let wall_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
                 + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&BLUE).filled());
         };
         let path_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
-                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&CYAN_500).filled());
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&MAGENTA).filled());
         };
         let start_block = |x: i32, y: i32| {
             return EmptyElement::at((x, y))
@@ -194,13 +196,25 @@ impl Graph {
             return EmptyElement::at((x, y))
                 + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&GREEN).filled());
         };
+        let node_block = |x: i32, y: i32| {
+            return EmptyElement::at((x, y))
+                + Rectangle::new([(0, 0), (block_side, block_side)], ShapeStyle::from(&CYAN_200).filled());
+        };
 
         for pos in self.walls.clone() {
             root_area.draw(&wall_block(pos.x, pos.y))?;
-
         }
-        for pos in self.show_path() {
-            root_area.draw(&path_block(pos.x, pos.y))?;
+        
+        for (pos, (cost, _)) in self.node_list.clone() {
+            if cost < usize::MAX {
+                root_area.draw(&node_block(pos.x, pos.y))?;
+            }
+        }
+        
+        if last {       // future flag for drawing the path at the end
+            for pos in self.show_path() {
+                root_area.draw(&path_block(pos.x, pos.y))?;
+            }
         }
         root_area.draw(&start_block(self.start.x, self.start.y))?;
         root_area.draw(&end_block(self.end.x, self.end.y))?;
@@ -219,7 +233,7 @@ mod tests {
     fn test_part_one_test_a() {
         let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
         let res = graph.shortest_path();
-        graph.visual_plot().unwrap();
+        graph.visual_plot(true).unwrap();
         assert_eq!(res, Some(7036));
     }
 
@@ -227,7 +241,7 @@ mod tests {
     fn test_part_one_test_b() {
         let mut graph = Graph::new("src/bin/day16/day16_test_b.txt");
         let res = graph.shortest_path();
-        graph.visual_plot().unwrap();
+        graph.visual_plot(true).unwrap();
         assert_eq!(res, Some(11048));
     }
 
@@ -238,7 +252,7 @@ mod tests {
 
         let mut graph = Graph::new("src/bin/day16/day16_data.txt");
         let res = graph.shortest_path();
-        graph.visual_plot().unwrap();
+        graph.visual_plot(true).unwrap();
         assert_eq!(res, Some(107512));
     }
 
@@ -246,7 +260,7 @@ mod tests {
     fn test_part_one_joost() {
         let mut graph = Graph::new("src/bin/day16/joost.txt");
         let res = graph.shortest_path();
-        graph.visual_plot().unwrap();
+        graph.visual_plot(true).unwrap();
         assert_eq!(res, Some(82464));
     }
 }
