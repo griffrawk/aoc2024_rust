@@ -1,13 +1,13 @@
 use aocutils::point::Point;
+use num::integer::sqrt;
 use num::{abs, ToPrimitive};
 use plotters::coord::types::RangedCoordi32;
-use plotters::prelude::full_palette::CYAN_200;
 use plotters::prelude::*;
+use plotters::style::full_palette::GREY;
 use std::cmp::{max, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
-use std::fs;
 use std::ops::Range;
-use plotters::style::full_palette::GREY;
+use std::{fs, i32};
 
 const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
@@ -15,7 +15,7 @@ const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
 #[derive(Debug, Clone)]
 struct Node {
-    cost: usize,
+    cost: i32,
     came_from: Option<Point<i32>>,
 }
 
@@ -89,7 +89,7 @@ impl Graph {
                         node_list.insert(
                             pos,
                             Node {
-                                cost: usize::MAX,
+                                cost: i32::MAX,
                                 came_from: None,
                             },
                         );
@@ -120,7 +120,7 @@ impl Graph {
     // to each node. This implementation isn't memory-efficient as it may leave duplicate
     // nodes in the queue. It also uses `usize::MAX` as a sentinel value,
     // for a simpler implementation.
-    fn shortest_path(&mut self) -> Option<usize> {
+    fn shortest_path(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
         // We're at `start`, with a zero cost. node_list already init with usize::MAX,
@@ -187,6 +187,88 @@ impl Graph {
         None
     }
 
+    fn astar(&mut self) -> Option<i32> {
+        let mut heap = BinaryHeap::new();
+
+        // We're at `start`, with a zero cost. node_list already init with usize::MAX,
+        // came_from None
+        // heap contains cost, start, and the previous to start, off west by 1. This
+        // forces the Reindeer to be facing east.
+        self.node_list.insert(
+            self.start,
+            Node {
+                cost: i32::MAX,
+                came_from: None,
+            },
+        );
+        let est_cost = abs(self.end.x - self.start.x) + abs(self.end.y - self.start.y);
+        // let est_cost =
+        //     sqrt(abs(self.end.x - self.start.x).pow(2) + abs(self.end.y - self.start.y).pow(2));
+        heap.push(Reverse((
+            est_cost,
+            0,
+            self.start,
+            Point {
+                x: self.start.x - 1,
+                y: self.start.y,
+            },
+        )));
+
+        // Examine the frontier with lower cost nodes first (min-heap)
+        while let Some(Reverse((_, cost, position, previous))) = heap.pop() {
+            // Alternatively we could have continued to find all shortest paths
+            if position == self.end {
+                return Some(cost);
+            }
+
+            // Important as we may have already found a better way
+            let pos_cost = self.node_list[&position].cost;
+            if cost > pos_cost {
+                continue;
+            }
+            
+            //todo not convinced this is anywhere near correct
+
+            // For each node we can reach, see if we can find a way with
+            // a lower cost going through this node
+            if let Some(edges) = self.adjacency_list.get(&position) {
+                for node in edges {
+                    let next_cost = cost + 1;
+                    // Need to account for a 90-degree turn here. Use previous and
+                    // next points to check for a change in x and y
+                    // todo reintroduce this later. omitted for the moment to test pure astar
+                    // if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
+                    //     next_cost += 1000;
+                    // }
+
+                    // is it as simple as adding the heuristic to the pushed cost? no
+                    let h = abs(self.end.x - node.x) + abs(self.end.y - node.y);
+                    // let h =
+                    //     sqrt(abs(self.end.x - self.start.x).pow(2) + abs(self.end.y - self.start.y).pow(2));
+                    let est_cost = next_cost + h;
+
+                    // If so, add it to the frontier and continue
+                    if next_cost < self.node_list[&node].cost {
+                        let next = Reverse((est_cost, next_cost, *node, position));
+                        heap.push(next);
+                        // Relaxation, we have now found a better way. Update cost and came_from
+                        self.node_list.insert(
+                            *node,
+                            Node {
+                                cost: next_cost,
+                                came_from: Some(position),
+                            },
+                        );
+                    }
+                }
+                self.visual_plot(false).unwrap();
+                self.plot_sequence += 1;
+            }
+        }
+        // Goal not reachable
+        None
+    }
+
     fn show_path(&mut self) -> Vec<Point<i32>> {
         // Assemble a list of path nodes from the end to start, and referring to
         // each node's came_from to find previous node
@@ -216,19 +298,24 @@ impl Graph {
             ));
 
         let block_side = 1024 / self.yrange.end + 1;
-        let node_block = |x: i32, y: i32, max_cost: usize, cost: usize| {
+        let node_block = |x: i32, y: i32, max_cost: i32, cost: i32| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
                     [(0, 0), (block_side, block_side)],
-                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(cost as f64, 0.0, max_cost as f64)).filled(),
+                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                        cost as f64,
+                        0.0,
+                        max_cost as f64,
+                    ))
+                    .filled(),
                 );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&c).filled(),
-            );
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&c).filled(),
+                );
         };
 
         for pos in self.walls.clone() {
@@ -237,16 +324,24 @@ impl Graph {
 
         // todo revisit this for animation maybe. not convinced the calc is correct
         //  as different to end cost as below, when found at the last frame
-        // let max_cost = 
-        //     .node_list
+        // let end_cost = self.node_list[&self.end].cost;
+        // let max_cost = 1 + 10 *
+        //     self.node_list
         //     .values()
-        //     .fold(0, |acc, node| max(acc, node.cost));
-        
-        let end_cost = self.node_list[&self.end].cost;
-        
+        //     .fold(0, |acc, node| {
+        //         if node.cost < usize::MAX {
+        //             max(acc, node.cost)
+        //         } else {
+        //             0
+        //         }
+        //     });
+        let max_cost = 450;
+
+        // dbg!(max_cost);
+
         for (pos, node) in self.node_list.clone() {
-            if node.cost < usize::MAX {
-                root_area.draw(&node_block(pos.x, pos.y, end_cost, node.cost))?;
+            if node.cost < i32::MAX {
+                root_area.draw(&node_block(pos.x, pos.y, max_cost, node.cost))?;
             }
         }
 
@@ -299,10 +394,43 @@ mod tests {
     }
 
     #[test]
+    fn test_part_one_astar_data() {
+        // to debug cwd when I'm trying to find the png
+        println!(
+            "Current directory {}",
+            env::current_dir().unwrap().display()
+        );
+
+        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
+        let res = graph.astar();
+        graph.visual_plot(true).unwrap();
+        assert_eq!(res, Some(107512));
+    }
+
+    #[test]
     fn test_part_one_joost() {
         let mut graph = Graph::new("src/bin/day16/joost.txt");
         let res = graph.shortest_path();
         graph.visual_plot(true).unwrap();
         assert_eq!(res, Some(82464));
+    }
+
+    #[test]
+    fn test_part_one_large_dijkstra() {
+        let mut graph = Graph::new("src/bin/day16/large_minimal_obstacles.txt");
+        if let Some(res) = graph.astar() {
+            dbg!(res);
+            graph.visual_plot(true).unwrap();
+        }
+    }
+
+    #[test]
+    fn test_part_one_astar() {
+        let mut graph = Graph::new("src/bin/day16/large_minimal_obstacles.txt");
+        // let mut graph = Graph::new("src/bin/day16/day16_data.txt");
+        if let Some(res) = graph.astar() {
+            dbg!(res);
+            graph.visual_plot(true).unwrap();
+        }
     }
 }
