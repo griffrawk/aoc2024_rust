@@ -137,6 +137,8 @@ impl Graph {
                 came_from: None,
             },
         );
+        
+        // cost, position, previous position
         heap.push(Reverse((
             0,
             self.start,
@@ -183,6 +185,7 @@ impl Graph {
                         );
                     }
                 }
+                // uncomment for animation frames
                 // self.visual_plot(false).unwrap();
                 // self.plot_sequence += 1;
             }
@@ -194,7 +197,7 @@ impl Graph {
     fn astar(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
-        // We're at `start`, with a zero cost. node_list already init with usize::MAX,
+        // We're at `start`, with a zero cost. node_list already init with i32::MAX,
         // came_from None
         // heap contains cost, start, and the previous to start, off west by 1. This
         // forces the Reindeer to be facing east.
@@ -207,8 +210,8 @@ impl Graph {
                 came_from: None,
             },
         );
-        // let est_cost =
-        //     sqrt(abs(self.end.x - self.start.x).pow(2) + abs(self.end.y - self.start.y).pow(2));
+        
+        // est_cost, dijkstra cost, position, previous position to West 
         heap.push(Reverse((
             est_cost,
             0,
@@ -232,24 +235,20 @@ impl Graph {
                 continue;
             }
 
-            //todo not convinced this is anywhere near correct
-
             // For each node we can reach, see if we can find a way with
             // a lower cost going through this node
             if let Some(edges) = self.adjacency_list.get(&position) {
                 for node in edges {
                     let mut next_cost = cost + 1;
+                    
                     // Need to account for a 90-degree turn here. Use previous and
                     // next points to check for a change in x and y
-                    // todo reintroduce this later. omitted for the moment to test pure astar
                     if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
                         next_cost += 1000;
                     }
 
-                    // is it as simple as adding the heuristic to the pushed cost? no
                     let h = abs(self.end.x - node.x) + abs(self.end.y - node.y);
-                    // let h =
-                    //     sqrt(abs(self.end.x - self.start.x).pow(2) + abs(self.end.y - self.start.y).pow(2));
+                    
                     let est_cost = next_cost + h;
 
                     // If so, add it to the frontier and continue
@@ -267,6 +266,7 @@ impl Graph {
                         );
                     }
                 }
+                // uncomment for animation frames
                 // self.astar_visual_plot(false).unwrap();
                 // self.plot_sequence += 1;
             }
@@ -347,7 +347,6 @@ impl Graph {
 
         for (pos, node) in self.node_list.clone() {
             if node.cost < i32::MAX {
-                // todo how can I show a number?
                 root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
@@ -363,7 +362,6 @@ impl Graph {
         root_area.present()?;
         Ok(())
     }
-
 
     fn astar_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
@@ -391,11 +389,11 @@ impl Graph {
                 ))
                     .filled(),
             // )
-                // display the f value
+                // display the f value. only use for a smaller dimension graph
                 // + Text::new(
                 // format!("{}", node.est_cost),
                 // (10, 10),
-                // ("sans-serif", 10).into_font(),
+                // ("sans-serif", 30).into_font(),
             );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
@@ -423,6 +421,8 @@ impl Graph {
         //             0
         //         }
         //     });
+        
+        // hardcoded max_cost for the colour model until I work out as above...
         // let max_cost = 7050;
         let max_cost = 107512;
 
@@ -430,7 +430,6 @@ impl Graph {
 
         for (pos, node) in self.node_list.clone() {
             if node.cost < i32::MAX {
-                // todo how can I show a number?
                 root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
