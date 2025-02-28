@@ -190,7 +190,7 @@ impl Graph {
         None
     }
 
-    pub fn astar(&mut self) -> Option<i32> {
+    pub fn a_star(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
         // We're at `start`, with a zero cost. node_list already init with i32::MAX, but
@@ -363,7 +363,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn astar_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn a_star_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
         let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
