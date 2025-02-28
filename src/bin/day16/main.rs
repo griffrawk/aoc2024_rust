@@ -26,7 +26,7 @@ mod tests {
     }
 
     #[test]
-    fn test_part_one_data() {
+    fn test_part_one_data_dijkstra() {
         let mut graph = Graph::new("src/bin/day16/data/day16_data.txt");
         if let Some(res) = graph.shortest_path() {
             graph.visual_plot(true).unwrap();
@@ -35,12 +35,12 @@ mod tests {
     }
 
     #[test]
-    fn test_part_one_astar() {
+    fn test_part_one_data_astar() {
         // let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
         let mut graph = Graph::new("src/bin/day16/data/day16_data.txt");
         if let Some(res) = graph.astar() {
             graph.astar_visual_plot(true).unwrap();
-            dbg!(res);
+            assert_eq!(res, 107512);
         }
     }
 }
