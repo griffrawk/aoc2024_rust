@@ -1,4 +1,5 @@
 mod day16_graph;
+mod visuals;
 
 fn main() {
 }
