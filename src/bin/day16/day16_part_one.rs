@@ -16,6 +16,7 @@ const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 #[derive(Debug, Clone)]
 struct Node {
     cost: i32,
+    est_cost: i32,
     came_from: Option<Point<i32>>,
 }
 
@@ -90,6 +91,7 @@ impl Graph {
                             pos,
                             Node {
                                 cost: i32::MAX,
+                                est_cost: 0,
                                 came_from: None,
                             },
                         );
@@ -131,6 +133,7 @@ impl Graph {
             self.start,
             Node {
                 cost: 0,
+                est_cost: 0,
                 came_from: None,
             },
         );
@@ -174,6 +177,7 @@ impl Graph {
                             *node,
                             Node {
                                 cost: next_cost,
+                                est_cost: 0,
                                 came_from: Some(position),
                             },
                         );
@@ -194,14 +198,15 @@ impl Graph {
         // came_from None
         // heap contains cost, start, and the previous to start, off west by 1. This
         // forces the Reindeer to be facing east.
+        let est_cost = abs(self.end.x - self.start.x) + abs(self.end.y - self.start.y);
         self.node_list.insert(
             self.start,
             Node {
                 cost: i32::MAX,
+                est_cost,
                 came_from: None,
             },
         );
-        let est_cost = abs(self.end.x - self.start.x) + abs(self.end.y - self.start.y);
         // let est_cost =
         //     sqrt(abs(self.end.x - self.start.x).pow(2) + abs(self.end.y - self.start.y).pow(2));
         heap.push(Reverse((
@@ -226,20 +231,20 @@ impl Graph {
             if cost > pos_cost {
                 continue;
             }
-            
+
             //todo not convinced this is anywhere near correct
 
             // For each node we can reach, see if we can find a way with
             // a lower cost going through this node
             if let Some(edges) = self.adjacency_list.get(&position) {
                 for node in edges {
-                    let next_cost = cost + 1;
+                    let mut next_cost = cost + 1;
                     // Need to account for a 90-degree turn here. Use previous and
                     // next points to check for a change in x and y
                     // todo reintroduce this later. omitted for the moment to test pure astar
-                    // if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
-                    //     next_cost += 1000;
-                    // }
+                    if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
+                        next_cost += 1000;
+                    }
 
                     // is it as simple as adding the heuristic to the pushed cost? no
                     let h = abs(self.end.x - node.x) + abs(self.end.y - node.y);
@@ -256,13 +261,14 @@ impl Graph {
                             *node,
                             Node {
                                 cost: next_cost,
+                                est_cost,
                                 came_from: Some(position),
                             },
                         );
                     }
                 }
-                self.visual_plot(false).unwrap();
-                self.plot_sequence += 1;
+                // self.astar_visual_plot(false).unwrap();
+                // self.plot_sequence += 1;
             }
         }
         // Goal not reachable
@@ -298,24 +304,24 @@ impl Graph {
             ));
 
         let block_side = 1024 / self.yrange.end + 1;
-        let node_block = |x: i32, y: i32, max_cost: i32, cost: i32| {
+        let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                    [(0, 0), (block_side, block_side)],
-                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
-                        cost as f64,
-                        0.0,
-                        max_cost as f64,
-                    ))
+                [(0, 0), (block_side, block_side)],
+                ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                    node.cost as f64,
+                    0.0,
+                    max_cost as f64,
+                ))
                     .filled(),
-                );
+            );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                    [(0, 0), (block_side, block_side)],
-                    ShapeStyle::from(&c).filled(),
-                );
+                [(0, 0), (block_side, block_side)],
+                ShapeStyle::from(&c).filled(),
+            );
         };
 
         for pos in self.walls.clone() {
@@ -335,13 +341,97 @@ impl Graph {
         //             0
         //         }
         //     });
-        let max_cost = 450;
+        let max_cost = 107512;
 
         // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
             if node.cost < i32::MAX {
-                root_area.draw(&node_block(pos.x, pos.y, max_cost, node.cost))?;
+                // todo how can I show a number?
+                root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
+            }
+        }
+
+        if last {
+            for pos in self.show_path() {
+                root_area.draw(&block(pos.x, pos.y, BLACK))?;
+            }
+        }
+        root_area.draw(&block(self.start.x, self.start.y, RED))?;
+        root_area.draw(&block(self.end.x, self.end.y, GREEN))?;
+
+        root_area.present()?;
+        Ok(())
+    }
+
+
+    fn astar_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
+        let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
+        let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
+
+        root_area.fill(&WHITE).unwrap();
+        let end_x = self.xrange.end;
+        let end_y = self.yrange.end;
+        let root_area =
+            root_area.apply_coord_spec(Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(
+                0..end_x,
+                0..end_y,
+                (0..1024, 0..1024),
+            ));
+
+        let block_side = 1024 / self.yrange.end + 1;
+        let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
+            return EmptyElement::at((x, y))
+                + Rectangle::new(
+                [(0, 0), (block_side, block_side)],
+                ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                    node.est_cost as f64,
+                    0.0,
+                    max_cost as f64,
+                ))
+                    .filled(),
+            // )
+                // display the f value
+                // + Text::new(
+                // format!("{}", node.est_cost),
+                // (10, 10),
+                // ("sans-serif", 10).into_font(),
+            );
+        };
+        let block = |x: i32, y: i32, c: RGBColor| {
+            return EmptyElement::at((x, y))
+                + Rectangle::new(
+                [(0, 0), (block_side, block_side)],
+                ShapeStyle::from(&c).filled(),
+            );
+        };
+
+        for pos in self.walls.clone() {
+            root_area.draw(&block(pos.x, pos.y, GREY))?;
+        }
+
+        // todo revisit this for animation maybe. not convinced the calc is correct
+        //  as different to end cost as below, when found at the last frame
+        // let end_cost = self.node_list[&self.end].cost;
+        // let max_cost = 1 + 10 *
+        //     self.node_list
+        //     .values()
+        //     .fold(0, |acc, node| {
+        //         if node.cost < usize::MAX {
+        //             max(acc, node.cost)
+        //         } else {
+        //             0
+        //         }
+        //     });
+        // let max_cost = 7050;
+        let max_cost = 107512;
+
+        // dbg!(max_cost);
+
+        for (pos, node) in self.node_list.clone() {
+            if node.cost < i32::MAX {
+                // todo how can I show a number?
+                root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
 
@@ -357,6 +447,7 @@ impl Graph {
         Ok(())
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -381,12 +472,6 @@ mod tests {
 
     #[test]
     fn test_part_one_data() {
-        // to debug cwd when I'm trying to find the png
-        println!(
-            "Current directory {}",
-            env::current_dir().unwrap().display()
-        );
-
         let mut graph = Graph::new("src/bin/day16/day16_data.txt");
         let res = graph.shortest_path();
         graph.visual_plot(true).unwrap();
@@ -395,15 +480,9 @@ mod tests {
 
     #[test]
     fn test_part_one_astar_data() {
-        // to debug cwd when I'm trying to find the png
-        println!(
-            "Current directory {}",
-            env::current_dir().unwrap().display()
-        );
-
         let mut graph = Graph::new("src/bin/day16/day16_data.txt");
         let res = graph.astar();
-        graph.visual_plot(true).unwrap();
+        graph.astar_visual_plot(true).unwrap();
         assert_eq!(res, Some(107512));
     }
 
@@ -426,11 +505,11 @@ mod tests {
 
     #[test]
     fn test_part_one_astar() {
-        let mut graph = Graph::new("src/bin/day16/large_minimal_obstacles.txt");
-        // let mut graph = Graph::new("src/bin/day16/day16_data.txt");
+        // let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
+        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
         if let Some(res) = graph.astar() {
             dbg!(res);
-            graph.visual_plot(true).unwrap();
+            graph.astar_visual_plot(true).unwrap();
         }
     }
 }
