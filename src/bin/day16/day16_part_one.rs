@@ -1,5 +1,4 @@
 use aocutils::point::Point;
-use num::integer::sqrt;
 use num::{abs, ToPrimitive};
 use plotters::coord::types::RangedCoordi32;
 use plotters::prelude::*;
@@ -21,7 +20,7 @@ struct Node {
 }
 
 #[derive(Debug)]
-struct Graph {
+pub struct Graph {
     adjacency_list: HashMap<Point<i32>, Vec<Point<i32>>>,
     node_list: HashMap<Point<i32>, Node>,
     // for the visuals
@@ -34,7 +33,7 @@ struct Graph {
 }
 
 impl Graph {
-    fn new(file: &str) -> Self {
+    pub fn new(file: &str) -> Self {
         let mut xrange = Range::default();
         let mut yrange = Range::default();
         let mut start = Point::default();
@@ -122,7 +121,7 @@ impl Graph {
     // to each node. This implementation isn't memory-efficient as it may leave duplicate
     // nodes in the queue. It also uses `usize::MAX` as a sentinel value,
     // for a simpler implementation.
-    fn shortest_path(&mut self) -> Option<i32> {
+    pub fn shortest_path(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
         // We're at `start`, with a zero cost. node_list already init with usize::MAX,
@@ -194,7 +193,7 @@ impl Graph {
         None
     }
 
-    fn astar(&mut self) -> Option<i32> {
+    pub fn astar(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
         // We're at `start`, with a zero cost. node_list already init with i32::MAX,
@@ -289,7 +288,7 @@ impl Graph {
         res
     }
 
-    fn visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
         let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
@@ -363,7 +362,7 @@ impl Graph {
         Ok(())
     }
 
-    fn astar_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn astar_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
         let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
@@ -448,67 +447,3 @@ impl Graph {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use super::Graph;
-    use std::env;
-
-    #[test]
-    fn test_part_one_test_a() {
-        let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
-        let res = graph.shortest_path();
-        graph.visual_plot(true).unwrap();
-        assert_eq!(res, Some(7036));
-    }
-
-    #[test]
-    fn test_part_one_test_b() {
-        let mut graph = Graph::new("src/bin/day16/day16_test_b.txt");
-        let res = graph.shortest_path();
-        graph.visual_plot(true).unwrap();
-        assert_eq!(res, Some(11048));
-    }
-
-    #[test]
-    fn test_part_one_data() {
-        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
-        let res = graph.shortest_path();
-        graph.visual_plot(true).unwrap();
-        assert_eq!(res, Some(107512));
-    }
-
-    #[test]
-    fn test_part_one_astar_data() {
-        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
-        let res = graph.astar();
-        graph.astar_visual_plot(true).unwrap();
-        assert_eq!(res, Some(107512));
-    }
-
-    #[test]
-    fn test_part_one_joost() {
-        let mut graph = Graph::new("src/bin/day16/joost.txt");
-        let res = graph.shortest_path();
-        graph.visual_plot(true).unwrap();
-        assert_eq!(res, Some(82464));
-    }
-
-    #[test]
-    fn test_part_one_large_dijkstra() {
-        let mut graph = Graph::new("src/bin/day16/large_minimal_obstacles.txt");
-        if let Some(res) = graph.astar() {
-            dbg!(res);
-            graph.visual_plot(true).unwrap();
-        }
-    }
-
-    #[test]
-    fn test_part_one_astar() {
-        // let mut graph = Graph::new("src/bin/day16/day16_test_a.txt");
-        let mut graph = Graph::new("src/bin/day16/day16_data.txt");
-        if let Some(res) = graph.astar() {
-            dbg!(res);
-            graph.astar_visual_plot(true).unwrap();
-        }
-    }
-}
