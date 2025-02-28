@@ -2,7 +2,7 @@ use aocutils::point::Point;
 use num::{abs, ToPrimitive};
 use plotters::coord::types::RangedCoordi32;
 use plotters::prelude::*;
-use plotters::style::full_palette::GREY;
+use plotters::style::full_palette::{BLUEGREY_A700, GREY};
 use std::cmp::{max, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::ops::Range;
@@ -87,7 +87,7 @@ impl Graph {
                             pos,
                             Node {
                                 g_cost: i32::MAX,
-                                f_est_cost: 0,          // for A*
+                                f_est_cost: 0, // for A*
                                 came_from: None,
                             },
                         );
@@ -210,6 +210,7 @@ impl Graph {
             },
         );
 
+        // min-q
         // f (est_cost), g (dijkstra cost), position, previous position to West for the 90deg check
         heap.push(Reverse((
             f,
@@ -222,52 +223,52 @@ impl Graph {
         )));
 
         // Examine the frontier with lower cost nodes first (min-heap)
-        while let Some(Reverse((_heap_f, heap_g, position, previous))) = heap.pop() {
+        while let Some(Reverse((_heap_f, heap_g, heap_position, heap_previous))) = heap.pop() {
             // Alternatively we could have continued to find all shortest paths
-            if position == self.end {
+            if heap_position == self.end {
                 return Some(heap_g);
             }
 
             // Important as we may have already found a better way. Can it improve?
-            let position_g = self.node_list[&position].g_cost;
+            let position_g = self.node_list[&heap_position].g_cost;
             if heap_g > position_g {
                 // No, can't improve. Go back to next on heap.
                 continue;
             }
-            
+
             // For each node we can reach, see if we can find a way with
             // a lower cost going through this node
-            if let Some(edges) = self.adjacency_list.get(&position) {
-                for node in edges {
+            if let Some(edges) = self.adjacency_list.get(&heap_position) {
+                for next_node in edges {
                     let mut g = heap_g + 1;
 
                     // Need to account for a 90-degree turn here. Use previous and
                     // next points to check for a change in x && y. Add 1000 to weight g
-                    if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
+                    if abs(heap_previous.x - next_node.x) > 0 && abs(heap_previous.y - next_node.y) > 0 {
                         g += 1000;
                     }
 
-                    let h = abs(self.end.x - node.x) + abs(self.end.y - node.y);
+                    let h = abs(self.end.x - next_node.x) + abs(self.end.y - next_node.y);
                     let f = g + h;
 
                     // If so, add it to the frontier and continue
-                    if g < self.node_list[&node].g_cost {
-                        let next = Reverse((f, g, *node, position));
+                    if g < self.node_list[&next_node].g_cost {
+                        let next = Reverse((f, g, *next_node, heap_position));
                         heap.push(next);
-                        
+
                         // Relaxation, we have now found a better way. Update cost, est_cost and came_from
                         self.node_list.insert(
-                            *node,
+                            *next_node,
                             Node {
                                 g_cost: g,
                                 f_est_cost: f,
-                                came_from: Some(position),
+                                came_from: Some(heap_position),
                             },
                         );
                     }
                 }
                 // uncomment for animation frames
-                // self.astar_visual_plot(false).unwrap();
+                // self.a_star_visual_plot(false).unwrap();
                 // self.plot_sequence += 1;
             }
         }
@@ -378,24 +379,27 @@ impl Graph {
             ));
 
         let block_side = 1024 / self.yrange.end + 1;
-        let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
-            return EmptyElement::at((x, y))
-                + Rectangle::new(
+        let node_block = |x: i32, y: i32, max_cost: i32, node: Node, last: bool| {
+            let mut bg_colour =
+                MandelbrotHSL::get_color_normalized(node.f_est_cost as f64, 0.0, max_cost as f64);
+            let mut fg_colour = BLACK;
+            if last {
+                bg_colour = HSLColor(0.2, 0.1, 0.3);
+                fg_colour = WHITE;
+            }
+            EmptyElement::at((x, y))
+                    + Rectangle::new(
                     [(0, 0), (block_side, block_side)],
-                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
-                        node.f_est_cost as f64,
-                        0.0,
-                        max_cost as f64,
-                    ))
-                    .filled(),
-                    // )
+                    ShapeStyle::from(&bg_colour).filled(),
+                    )
                     // display the f value. only use for a smaller dimension graph
-                    // + Text::new(
-                    // format!("{}", node.est_cost),
-                    // (10, 10),
-                    // ("sans-serif", 30).into_font(),
-                );
+                    + Text::new(
+                    format!("{}", node.f_est_cost),
+                    (10, 10),
+                    ("sans-serif", 30).into_font().color(&fg_colour)
+            )
         };
+
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
@@ -423,20 +427,21 @@ impl Graph {
         //     });
 
         // hardcoded max_cost for the colour model until I work out as above...
-        // let max_cost = 7050;
-        let max_cost = 107512;
+        let max_cost = 7050;
+        // let max_cost = 107512;
 
         // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
             if node.g_cost < i32::MAX {
-                root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
+                root_area.draw(&node_block(pos.x, pos.y, max_cost, node, false))?;
             }
         }
 
         if last {
             for pos in self.show_path() {
-                root_area.draw(&block(pos.x, pos.y, BLACK))?;
+                let node = self.node_list[&pos].clone();
+                root_area.draw(&node_block(pos.x, pos.y, max_cost, node, last))?;
             }
         }
         root_area.draw(&block(self.start.x, self.start.y, RED))?;
