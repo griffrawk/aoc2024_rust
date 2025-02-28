@@ -14,8 +14,8 @@ const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
 #[derive(Debug, Clone)]
 struct Node {
-    cost: i32,
-    est_cost: i32,
+    g_cost: i32,
+    f_est_cost: i32,
     came_from: Option<Point<i32>>,
 }
 
@@ -83,14 +83,11 @@ impl Graph {
                                 }
                             }
                         }
-                        // v: (cost (initially usize::MAX), came_from node (for track-back
-                        // at the end) to get path. not to be confused with previous node in the
-                        // priority queue which is just to track previous for turn detection)
                         node_list.insert(
                             pos,
                             Node {
-                                cost: i32::MAX,
-                                est_cost: 0,
+                                g_cost: i32::MAX,
+                                f_est_cost: 0,          // for A*
                                 came_from: None,
                             },
                         );
@@ -131,12 +128,12 @@ impl Graph {
         self.node_list.insert(
             self.start,
             Node {
-                cost: 0,
-                est_cost: 0,
+                g_cost: 0,
+                f_est_cost: 0,
                 came_from: None,
             },
         );
-        
+
         // cost, position, previous position
         heap.push(Reverse((
             0,
@@ -155,7 +152,7 @@ impl Graph {
             }
 
             // Important as we may have already found a better way
-            if cost > self.node_list[&position].cost {
+            if cost > self.node_list[&position].g_cost {
                 continue;
             }
 
@@ -170,15 +167,15 @@ impl Graph {
                         next_cost += 1000;
                     }
                     // If so, add it to the frontier and continue
-                    if next_cost < self.node_list[&node].cost {
+                    if next_cost < self.node_list[&node].g_cost {
                         let next = Reverse((next_cost, *node, position));
                         heap.push(next);
                         // Relaxation, we have now found a better way. Update cost and came_from
                         self.node_list.insert(
                             *node,
                             Node {
-                                cost: next_cost,
-                                est_cost: 0,
+                                g_cost: next_cost,
+                                f_est_cost: 0,
                                 came_from: Some(position),
                             },
                         );
@@ -196,24 +193,27 @@ impl Graph {
     pub fn astar(&mut self) -> Option<i32> {
         let mut heap = BinaryHeap::new();
 
-        // We're at `start`, with a zero cost. node_list already init with i32::MAX,
-        // came_from None
+        // We're at `start`, with a zero cost. node_list already init with i32::MAX, but
+        // this is overwritten for start,
+        // came_from = None
         // heap contains cost, start, and the previous to start, off west by 1. This
         // forces the Reindeer to be facing east.
-        let est_cost = abs(self.end.x - self.start.x) + abs(self.end.y - self.start.y);
+        let h = abs(self.end.x - self.start.x) + abs(self.end.y - self.start.y);
+        let f = h;
+        let g = 0;
         self.node_list.insert(
             self.start,
             Node {
-                cost: i32::MAX,
-                est_cost,
+                g_cost: g,
+                f_est_cost: f,
                 came_from: None,
             },
         );
-        
-        // est_cost, dijkstra cost, position, previous position to West 
+
+        // f (est_cost), g (dijkstra cost), position, previous position to West for the 90deg check
         heap.push(Reverse((
-            est_cost,
-            0,
+            f,
+            g,
             self.start,
             Point {
                 x: self.start.x - 1,
@@ -222,44 +222,45 @@ impl Graph {
         )));
 
         // Examine the frontier with lower cost nodes first (min-heap)
-        while let Some(Reverse((_, cost, position, previous))) = heap.pop() {
+        while let Some(Reverse((_heap_f, heap_g, position, previous))) = heap.pop() {
             // Alternatively we could have continued to find all shortest paths
             if position == self.end {
-                return Some(cost);
+                return Some(heap_g);
             }
 
-            // Important as we may have already found a better way
-            let pos_cost = self.node_list[&position].cost;
-            if cost > pos_cost {
+            // Important as we may have already found a better way. Can it improve?
+            let position_g = self.node_list[&position].g_cost;
+            if heap_g > position_g {
+                // No, can't improve. Go back to next on heap.
                 continue;
             }
-
+            
             // For each node we can reach, see if we can find a way with
             // a lower cost going through this node
             if let Some(edges) = self.adjacency_list.get(&position) {
                 for node in edges {
-                    let mut next_cost = cost + 1;
-                    
+                    let mut g = heap_g + 1;
+
                     // Need to account for a 90-degree turn here. Use previous and
-                    // next points to check for a change in x and y
+                    // next points to check for a change in x && y. Add 1000 to weight g
                     if abs(previous.x - node.x) > 0 && abs(previous.y - node.y) > 0 {
-                        next_cost += 1000;
+                        g += 1000;
                     }
 
                     let h = abs(self.end.x - node.x) + abs(self.end.y - node.y);
-                    
-                    let est_cost = next_cost + h;
+                    let f = g + h;
 
                     // If so, add it to the frontier and continue
-                    if next_cost < self.node_list[&node].cost {
-                        let next = Reverse((est_cost, next_cost, *node, position));
+                    if g < self.node_list[&node].g_cost {
+                        let next = Reverse((f, g, *node, position));
                         heap.push(next);
-                        // Relaxation, we have now found a better way. Update cost and came_from
+                        
+                        // Relaxation, we have now found a better way. Update cost, est_cost and came_from
                         self.node_list.insert(
                             *node,
                             Node {
-                                cost: next_cost,
-                                est_cost,
+                                g_cost: g,
+                                f_est_cost: f,
                                 came_from: Some(position),
                             },
                         );
@@ -306,21 +307,21 @@ impl Graph {
         let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
-                    node.cost as f64,
-                    0.0,
-                    max_cost as f64,
-                ))
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                        node.g_cost as f64,
+                        0.0,
+                        max_cost as f64,
+                    ))
                     .filled(),
-            );
+                );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&c).filled(),
-            );
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&c).filled(),
+                );
         };
 
         for pos in self.walls.clone() {
@@ -345,7 +346,7 @@ impl Graph {
         // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
-            if node.cost < i32::MAX {
+            if node.g_cost < i32::MAX {
                 root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
@@ -380,27 +381,27 @@ impl Graph {
         let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
-                    node.est_cost as f64,
-                    0.0,
-                    max_cost as f64,
-                ))
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                        node.f_est_cost as f64,
+                        0.0,
+                        max_cost as f64,
+                    ))
                     .filled(),
-            // )
-                // display the f value. only use for a smaller dimension graph
-                // + Text::new(
-                // format!("{}", node.est_cost),
-                // (10, 10),
-                // ("sans-serif", 30).into_font(),
-            );
+                    // )
+                    // display the f value. only use for a smaller dimension graph
+                    // + Text::new(
+                    // format!("{}", node.est_cost),
+                    // (10, 10),
+                    // ("sans-serif", 30).into_font(),
+                );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&c).filled(),
-            );
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&c).filled(),
+                );
         };
 
         for pos in self.walls.clone() {
@@ -420,7 +421,7 @@ impl Graph {
         //             0
         //         }
         //     });
-        
+
         // hardcoded max_cost for the colour model until I work out as above...
         // let max_cost = 7050;
         let max_cost = 107512;
@@ -428,7 +429,7 @@ impl Graph {
         // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
-            if node.cost < i32::MAX {
+            if node.g_cost < i32::MAX {
                 root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
@@ -445,5 +446,3 @@ impl Graph {
         Ok(())
     }
 }
-
-
