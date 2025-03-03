@@ -50,7 +50,7 @@ impl eframe::App for MyApp {
             });
         });
         egui::TopBottomPanel::bottom("wobble").show(ctx, |foo| {
-           foo.add(egui::Slider::new(&mut self.age, 0..=300).text("fo"));
+            foo.add(egui::Slider::new(&mut self.age, 0..=300).text("fo"));
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("My egui Application");
@@ -63,7 +63,7 @@ impl eframe::App for MyApp {
             });
             // slider
             ui.add(egui::Slider::new(&mut self.age, 0..=120).text("age"));
-            
+
             // this acts as the definer for a button, and its action
             let increment_button = ui.button("Increment");
 
@@ -77,10 +77,7 @@ impl eframe::App for MyApp {
             ui.label(format!("Hello '{}', age {}", self.name, self.age));
 
             // an image
-            ui.image(egui::include_image!(
-                "ferris.png"
-            ));
+            ui.image(egui::include_image!("ferris.png"));
         });
-
     }
 }

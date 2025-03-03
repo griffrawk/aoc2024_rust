@@ -2,11 +2,11 @@
 mod tests {
 
     use aocutils::point::Point;
-    use std::collections::HashMap;
-    use std::{env, fs};
     use plotters::coord::types::RangedCoordi32;
     use plotters::prelude::*;
-    
+    use std::collections::HashMap;
+    use std::{env, fs};
+
     const OUTPUT_FILENAME: &str = "src/bin/day15/output_part2_data/day15_gen";
 
     #[derive(Debug, Clone, Default)]
@@ -55,9 +55,7 @@ mod tests {
                         let x2 = x * 2;
                         match c {
                             'O' => {
-                                locations
-                                    .entry(Point { x: x2, y })
-                                    .or_insert(Obstacle::Box);
+                                locations.entry(Point { x: x2, y }).or_insert(Obstacle::Box);
                             }
                             '#' => {
                                 locations
@@ -92,23 +90,31 @@ mod tests {
             }
         }
 
-        fn visual_plot(&mut self, instruction: &Direction) -> Result<(), Box<dyn std::error::Error>> {
-            let out = format!("{}_{:06}_{}{}", 
-                                OUTPUT_FILENAME,
-                                self.plot_sequence, 
-                                match instruction {
-                                    Direction::North => '^',
-                                    Direction::East => '>',
-                                    Direction::South => 'v',
-                                    Direction::West => '<',
-                                },
-                                ".png");
+        fn visual_plot(
+            &mut self,
+            instruction: &Direction,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            let out = format!(
+                "{}_{:06}_{}{}",
+                OUTPUT_FILENAME,
+                self.plot_sequence,
+                match instruction {
+                    Direction::North => '^',
+                    Direction::East => '>',
+                    Direction::South => 'v',
+                    Direction::West => '<',
+                },
+                ".png"
+            );
             let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
             root_area.fill(&WHITE).unwrap();
-            let root_area = root_area.apply_coord_spec(
-                Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(0..100, 0..100, (0..1024, 0..1024)),
-            );
+            let root_area =
+                root_area.apply_coord_spec(Cartesian2d::<RangedCoordi32, RangedCoordi32>::new(
+                    0..100,
+                    0..100,
+                    (0..1024, 0..1024),
+                ));
 
             let wall_block = |x: i32, y: i32| {
                 return EmptyElement::at((x, y))
@@ -145,44 +151,44 @@ mod tests {
                 match instruction {
                     Direction::North => {
                         proposed_robot_move.y -= 1;
-                        
+
                         //    []
                         // ^  @     x + 0, y + -1
                         obstacle_check.y = self.robot.pos.y - 1;
                         move_list.push(obstacle_check);
-                        
+
                         //   []
                         // ^  @     x + -1, y + -1
                         obstacle_check.x = self.robot.pos.x - 1;
                         move_list.push(obstacle_check);
-                    },
+                    }
                     Direction::East => {
                         proposed_robot_move.x += 1;
-                        
+
                         // > @[]    x + 1, y + 0
                         obstacle_check.x = self.robot.pos.x + 1;
                         move_list.push(obstacle_check);
-                    },
+                    }
                     Direction::South => {
                         proposed_robot_move.y += 1;
-                        
+
                         // v  @
                         //    []    x + 0, y + 1
                         obstacle_check.y = self.robot.pos.y + 1;
                         move_list.push(obstacle_check);
-                        
+
                         // v  @
                         //   []     x + -1, y + 1
                         obstacle_check.x = self.robot.pos.x - 1;
                         move_list.push(obstacle_check);
-                    },
+                    }
                     Direction::West => {
                         proposed_robot_move.x -= 1;
-                        
+
                         // < []@    x + -2, y + 0
                         obstacle_check.x = self.robot.pos.x - 2;
                         move_list.push(obstacle_check);
-                    },
+                    }
                 }
                 // Process each move, only move robot if all moves true
                 self.locations_rollback = self.locations.clone();
@@ -227,12 +233,12 @@ mod tests {
                                     // ^ []     x + 0, y + -1
                                     obstacle_check.x = proposed_move.x;
                                     move_list.push(obstacle_check);
-                                    
+
                                     //    []
                                     // ^ []     x + 1, y + -1
                                     obstacle_check.x = proposed_move.x + 1;
                                     move_list.push(obstacle_check);
-                                },
+                                }
                                 Direction::East => {
                                     next_move.x += 1;
 
@@ -240,7 +246,7 @@ mod tests {
                                     obstacle_check.x = proposed_move.x + 2;
                                     obstacle_check.y = proposed_move.y;
                                     move_list.push(obstacle_check);
-                                },
+                                }
                                 Direction::South => {
                                     next_move.y += 1;
 
@@ -254,12 +260,12 @@ mod tests {
                                     //    []     x + 0, y + 1
                                     obstacle_check.x = proposed_move.x;
                                     move_list.push(obstacle_check);
-                                    
+
                                     // v  []
                                     //     []     x + 1, y + 1
                                     obstacle_check.x = proposed_move.x + 1;
                                     move_list.push(obstacle_check);
-                                },
+                                }
                                 Direction::West => {
                                     next_move.x -= 1;
 
@@ -267,7 +273,7 @@ mod tests {
                                     obstacle_check.x = proposed_move.x - 2;
                                     obstacle_check.y = proposed_move.y;
                                     move_list.push(obstacle_check);
-                                },
+                                }
                             }
                             // Process each move, only move box if all true
                             let res: Vec<bool> = move_list
@@ -276,7 +282,9 @@ mod tests {
                                 .collect();
                             if !res.contains(&false) {
                                 // insert box at next_move
-                                self.locations_rollback.entry(next_move).or_insert(Obstacle::Box);
+                                self.locations_rollback
+                                    .entry(next_move)
+                                    .or_insert(Obstacle::Box);
                                 // remove the box at proposed_move
                                 self.locations_rollback.remove(&proposed_move);
                                 true

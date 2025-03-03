@@ -1,8 +1,8 @@
+use crate::day16_graph::{Graph, Node};
 use plotters::backend::BitMapBackend;
 use plotters::coord::types::RangedCoordi32;
-use plotters::prelude::*;
 use plotters::prelude::full_palette::GREY;
-use crate::day16_graph::Graph;
+use plotters::prelude::*;
 
 const OUTPUT_FILENAME: &str = "src/bin/day16/output/day16_gen";
 
@@ -22,24 +22,24 @@ impl Graph {
             ));
 
         let block_side = 1024 / self.yrange.end + 1;
-        let node_block = |x: i32, y: i32, max_cost: i32, node: crate::day16_graph::Node| {
+        let node_block = |x: i32, y: i32, max_cost: i32, node: Node| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
-                    node.g_cost as f64,
-                    0.0,
-                    max_cost as f64,
-                ))
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&MandelbrotHSL::get_color_normalized(
+                        node.g_cost as f64,
+                        0.0,
+                        max_cost as f64,
+                    ))
                     .filled(),
-            );
+                );
         };
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&c).filled(),
-            );
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&c).filled(),
+                );
         };
 
         for pos in self.walls.clone() {
@@ -64,7 +64,7 @@ impl Graph {
         // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
-            if node.g_cost < i32::MAX {
+            if node.g_cost < i32::MAX || node.seen {
                 root_area.draw(&node_block(pos.x, pos.y, max_cost, node))?;
             }
         }
@@ -81,7 +81,11 @@ impl Graph {
         Ok(())
     }
 
-    pub fn a_star_visual_plot(&mut self, last: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn a_star_visual_plot(
+        &mut self,
+        max_cost: i32,
+        last: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let out = format!("{}_{:06}{}", OUTPUT_FILENAME, self.plot_sequence, ".png");
         let root_area = BitMapBackend::new(&out, (1024, 1024)).into_drawing_area();
 
@@ -96,7 +100,7 @@ impl Graph {
             ));
 
         let block_side = 1024 / self.yrange.end + 1;
-        let node_block = |x: i32, y: i32, max_cost: i32, node: crate::day16_graph::Node, last: bool| {
+        let node_block = |x: i32, y: i32, max_cost: i32, node: Node, last: bool| {
             let mut bg_colour =
                 MandelbrotHSL::get_color_normalized(node.f_est_cost as f64, 0.0, max_cost as f64);
             let mut fg_colour = BLACK;
@@ -106,48 +110,27 @@ impl Graph {
             }
             EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&bg_colour).filled(),
-            )
-                // display the f value. only use for a smaller dimension graph
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&bg_colour).filled(),
+                )
                 + Text::new(
-                format!("{}", node.f_est_cost),
-                (10, 10),
-                ("sans-serif", 30).into_font().color(&fg_colour)
-            )
+                    format!("{}", node.f_est_cost),
+                    (10, 10),
+                    ("sans-serif", 30).into_font().color(&fg_colour),
+                )
         };
 
         let block = |x: i32, y: i32, c: RGBColor| {
             return EmptyElement::at((x, y))
                 + Rectangle::new(
-                [(0, 0), (block_side, block_side)],
-                ShapeStyle::from(&c).filled(),
-            );
+                    [(0, 0), (block_side, block_side)],
+                    ShapeStyle::from(&c).filled(),
+                );
         };
 
         for pos in self.walls.clone() {
             root_area.draw(&block(pos.x, pos.y, GREY))?;
         }
-
-        // todo revisit this for animation maybe. not convinced the calc is correct
-        //  as different to end cost as below, when found at the last frame
-        // let end_cost = self.node_list[&self.end].cost;
-        // let max_cost = 1 + 10 *
-        //     self.node_list
-        //     .values()
-        //     .fold(0, |acc, node| {
-        //         if node.cost < usize::MAX {
-        //             max(acc, node.cost)
-        //         } else {
-        //             0
-        //         }
-        //     });
-
-        // hardcoded max_cost for the colour model until I work out as above...
-        let max_cost = 7050;
-        // let max_cost = 107512;
-
-        // dbg!(max_cost);
 
         for (pos, node) in self.node_list.clone() {
             if node.g_cost < i32::MAX {

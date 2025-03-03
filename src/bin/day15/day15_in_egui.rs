@@ -211,8 +211,7 @@ impl eframe::App for Warehouse {
         });
         egui::CentralPanel::default().show(ctx, |central_ui| {
             egui::Frame::canvas(central_ui.style()).show(central_ui, |canvas_ui| {
-
-                let pos_on_canvas = | wh_pos: Point<usize> | -> (Pos2, f32) {
+                let pos_on_canvas = |wh_pos: Point<usize>| -> (Pos2, f32) {
                     // input warehouse coordinates
                     // return canvas points centre position, ui canvas spacing
                     let canvas_rect = canvas_ui.max_rect();
@@ -264,14 +263,18 @@ impl eframe::App for Warehouse {
                 // Robot
                 let (robot_pos, increment) = pos_on_canvas(self.robot.pos);
                 if self.robot.moved_successfully {
-                    canvas_ui
-                        .painter()
-                        .circle_filled(robot_pos, increment * 0.5, egui::Color32::CYAN);
+                    canvas_ui.painter().circle_filled(
+                        robot_pos,
+                        increment * 0.5,
+                        egui::Color32::CYAN,
+                    );
                 } else {
                     // robot turns the air BLUE if it can't move
-                    canvas_ui
-                        .painter()
-                        .circle_filled(robot_pos, increment * 0.8, egui::Color32::BLUE);
+                    canvas_ui.painter().circle_filled(
+                        robot_pos,
+                        increment * 0.8,
+                        egui::Color32::BLUE,
+                    );
                 }
             });
         });
@@ -292,6 +295,5 @@ impl eframe::App for Warehouse {
             }
         }
         ctx.request_repaint();
-
     }
 }
