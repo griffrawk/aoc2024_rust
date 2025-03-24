@@ -12,7 +12,7 @@ impl Graph {
         if next == self.end {return;}   
         self.node_list.entry(next).and_modify(|n| n.seen = true);  
         
-        self.visual_plot(false);
+        self.dijkstra_plot(false);
         self.plot_sequence += 1;
         
         for edge in self.adjacency_list[&next].clone() {
@@ -32,7 +32,7 @@ impl Graph {
     fn dfs_path_rec(&mut self, next: Point<i32>, last: &mut Vec<Point<i32>>) {
         if next == self.end {return;}
 
-        self.visual_plot(false);
+        self.dijkstra_plot(false);
         self.plot_sequence += 1;
 
         self.node_list.entry(next).and_modify(|n| n.seen = true);
