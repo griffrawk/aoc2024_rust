@@ -63,51 +63,45 @@ impl CPU {
     }
 
     fn adv(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
 
     fn bxl(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
-    
+
     fn bst(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
-    
-    fn jnz(&mut self, combo: usize) {
-        
-    }
-    
+
+    fn jnz(&mut self, combo: usize) {}
+
     fn bxc(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
-    
+
     fn out(&mut self, combo: usize) {
-        let o = match combo {
-            0..=3 => Some(combo.rem_euclid(8)),
-            4 => Some(self.reg_a.rem_euclid(8)),
-            5 => Some(self.reg_b.rem_euclid(8)),
-            6 => Some(self.reg_c.rem_euclid(8)),
-            _ => None,
-        };
-        if let Some(r) = o {
-            self.output.push(r);
+        if let Some(o) = self.combo_value(combo) {
+            self.output.push(o.rem_euclid(8));
         }
         self.instruction_pointer += 2;
     }
-    
+
     fn bdv(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
-    
+
     fn cdv(&mut self, combo: usize) {
-        
         self.instruction_pointer += 2;
     }
     
+    fn combo_value(&mut self, combo: usize) -> Option<usize> {
+        match combo {
+            0..=3 => Some(combo),
+            4 => Some(self.reg_a),
+            5 => Some(self.reg_b),
+            6 => Some(self.reg_c),
+            _ => None,
+        }
+    }
 }
