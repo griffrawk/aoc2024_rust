@@ -1,4 +1,5 @@
 use std::fs;
+use num::ToPrimitive;
 
 #[derive(Debug)]
 pub struct CPU {
@@ -42,41 +43,61 @@ impl CPU {
         }
     }
 
-    pub fn run(&mut self) -> &str {
+    pub fn run(&mut self) -> String {
         while self.instruction_pointer < self.program.len() {
             let instruction = self.program[self.instruction_pointer];
-            let combo = self.program[self.instruction_pointer + 1];
+            let operand = self.program[self.instruction_pointer + 1];
             match instruction {
-                0 => self.adv(combo),
-                1 => self.bxl(combo),
-                2 => self.bst(combo),
-                3 => self.jnz(combo),
-                4 => self.bxc(combo),
-                5 => self.out(combo),
-                6 => self.bdv(combo),
-                7 => self.cdv(combo),
+                0 => self.adv(operand),
+                1 => self.bxl(operand),
+                2 => self.bst(operand),
+                3 => self.jnz(operand),
+                4 => self.bxc(operand),
+                5 => self.out(operand),
+                6 => self.bdv(operand),
+                7 => self.cdv(operand),
                 _ => (),
             }
         }
-
-        "4,6,3,5,6,3,5,2,1,0"
+        self.output.iter().map(|x| x.to_string() + ",")
+            .collect::<String>()
+            .trim_end_matches(",")
+            .to_string()
+        // "4,6,3,5,6,3,5,2,1,0"
     }
 
+    // opcode 0 - divide A
     fn adv(&mut self, combo: usize) {
+        if let Some(o) = self.combo_value(combo) {
+            self.reg_a = (self.reg_a as i32 / 2i32.pow(o as u32)).to_usize().unwrap();
+        }
         self.instruction_pointer += 2;
     }
 
-    fn bxl(&mut self, combo: usize) {
+    // opcode 1 - B XOR literal
+    fn bxl(&mut self, literal: usize) { 
+        self.reg_b = self.reg_b ^ literal;
         self.instruction_pointer += 2;
     }
 
+    // opcode 3 - reg_b = combo mod 8
     fn bst(&mut self, combo: usize) {
+        if let Some(o) = self.combo_value(combo) {
+            self.reg_b = o.rem_euclid(8);
+        }
         self.instruction_pointer += 2;
     }
 
-    fn jnz(&mut self, combo: usize) {}
+    fn jnz(&mut self, literal: usize) {
+        if self.reg_a != 0 {
+            self.instruction_pointer = literal;
+        } else {
+            self.instruction_pointer += 2;
+        }
+    }
 
-    fn bxc(&mut self, combo: usize) {
+    fn bxc(&mut self, _operand: usize) {
+        self.reg_b = self.reg_b ^ self.reg_c;
         self.instruction_pointer += 2;
     }
 
@@ -88,10 +109,16 @@ impl CPU {
     }
 
     fn bdv(&mut self, combo: usize) {
+        if let Some(o) = self.combo_value(combo) {
+            self.reg_b = (self.reg_a as i32 / 2i32.pow(o as u32)).to_usize().unwrap();
+        }
         self.instruction_pointer += 2;
     }
 
     fn cdv(&mut self, combo: usize) {
+        if let Some(o) = self.combo_value(combo) {
+            self.reg_c = (self.reg_a as i32 / 2i32.pow(o as u32)).to_usize().unwrap();
+        }
         self.instruction_pointer += 2;
     }
     
