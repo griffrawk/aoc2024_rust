@@ -8,15 +8,15 @@ pub struct CPU {
     reg_b: usize,
     reg_c: usize,
 
-    program: Vec<usize>,
-    output: Vec<usize>,
+    pub(crate) program: Vec<usize>,
+    pub(crate) output: Vec<usize>,
 }
 
 impl CPU {
     pub(crate) fn new(file: &str) -> Self {
-        let mut reg_a: usize = 0;
-        let mut reg_b: usize = 0;
-        let mut reg_c: usize = 0;
+        let mut reg_a = 0;
+        let mut reg_b = 0;
+        let mut reg_c = 0;
         let mut program: Vec<usize> = Vec::new();
         for row in fs::read_to_string(file)
             .expect("Can't read the file")
@@ -45,6 +45,7 @@ impl CPU {
 
     pub fn run(&mut self) -> String {
         while self.instruction_pointer < self.program.len() {
+            dbg!(&self);
             let instruction = self.program[self.instruction_pointer];
             let operand = self.program[self.instruction_pointer + 1];
             match instruction {
@@ -61,7 +62,7 @@ impl CPU {
         }
         self.output.iter().map(|x| x.to_string() + ",")
             .collect::<String>()
-            .trim_end_matches(",")
+            .trim_end_matches(',')
             .to_string()
         // "4,6,3,5,6,3,5,2,1,0"
     }
@@ -80,7 +81,7 @@ impl CPU {
         self.instruction_pointer += 2;
     }
 
-    // opcode 3 - reg_b = combo mod 8
+    // opcode 2 - reg_b = combo mod 8
     fn bst(&mut self, combo: usize) {
         if let Some(o) = self.combo_value(combo) {
             self.reg_b = o.rem_euclid(8);
