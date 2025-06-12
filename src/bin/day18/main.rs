@@ -1,4 +1,3 @@
-mod vm;
 
 fn main() {}
 
