@@ -188,7 +188,9 @@ impl Warehouse {
 
 // Cursor AI:
 /*
-Looking at your top panel layout, I can see the issue you mentioned about the columns making the stop/start button elongated. Let me suggest some improvements to make the layout more balanced and visually appealing.
+Looking at your top panel layout, I can see the issue you mentioned about the columns making the 
+stop/start button elongated. Let me suggest some improvements to make the layout more balanced 
+and visually appealing.
 
 Here are the key improvements I made to your top panel layout:
 
@@ -214,7 +216,9 @@ Here are the key improvements I made to your top panel layout:
 - **More intuitive**: Icons on the play/pause button
 - **Responsive**: Uses natural egui layout instead of forced columns
 
-The layout now flows naturally from left to right: Reset → Controls → Status, with clear visual separation between sections. The button will now size itself appropriately based on its content rather than being forced to fill a column width.
+The layout now flows naturally from left to right: Reset → Controls → Status, with clear 
+visual separation between sections. The button will now size itself appropriately based 
+on its content rather than being forced to fill a column width.
 */
 
 impl eframe::App for Warehouse {
