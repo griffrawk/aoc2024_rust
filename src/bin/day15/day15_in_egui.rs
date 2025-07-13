@@ -186,26 +186,80 @@ impl Warehouse {
     }
 }
 
+// Cursor AI:
+/*
+Looking at your top panel layout, I can see the issue you mentioned about the columns making the stop/start button elongated. Let me suggest some improvements to make the layout more balanced and visually appealing.
+
+Here are the key improvements I made to your top panel layout:
+
+## Layout Improvements:
+
+1. **Replaced columns with horizontal layout**: This eliminates the elongated button issue you mentioned
+2. **Added visual separators**: Uses `ui.separator()` to create clear sections
+3. **Better button design**: 
+   - Added play/pause icons (▶/⏸) to make the button more intuitive
+   - Button text changes based on current state
+4. **Improved slider labeling**: 
+   - Moved "Delay:" label outside the slider for better readability
+   - Added "ms" suffix to the slider itself
+5. **Added status indicator**: 
+   - Shows "Running" or "Paused" on the right side
+   - Color-coded (green for running, gray for paused)
+
+## Benefits:
+
+- **More balanced**: No more stretched buttons
+- **Better visual hierarchy**: Clear sections with separators
+- **More informative**: Status indicator and better labels
+- **More intuitive**: Icons on the play/pause button
+- **Responsive**: Uses natural egui layout instead of forced columns
+
+The layout now flows naturally from left to right: Reset → Controls → Status, with clear visual separation between sections. The button will now size itself appropriately based on its content rather than being forced to fill a column width.
+*/
+
 impl eframe::App for Warehouse {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("Top").show(ctx, |top_ui| {
-            if top_ui.button("Reset Warehouse").clicked() {
-                self.reset_warehouse();
-            }
-            // todo ugh! egui has some weirdness with layout esp using the full width,
-            //  so I'm using columns. However this makes the stop / start button elongated
-            //  and a bit ugly.
-            top_ui.columns(3, |cols| {
-                cols[0].vertical_centered_justified(|ui| {
-                    ui.label(format!("Iterations: {}", self.iterations))
+            top_ui.horizontal(|ui| {
+                // Reset button on the left
+                if ui.button("Reset Warehouse").clicked() {
+                    self.reset_warehouse();
+                }
+                
+                ui.separator();
+                
+                // Center section with iterations and controls
+                ui.vertical_centered(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(format!("Iterations: {}", self.iterations));
+                        
+                        ui.separator();
+                        
+                        // Compact stop/start button
+                        let button_text = if self.running { "⏸ Stop" } else { "▶ Start" };
+                        if ui.button(button_text).clicked() {
+                            self.running = !self.running;
+                        }
+                        
+                        ui.separator();
+                        
+                        // Delay slider with better labeling
+                        ui.label("Delay:");
+                        ui.add(egui::Slider::new(&mut self.delay, 0.0..=500.0).suffix(" ms"));
+                    });
                 });
-                cols[1].vertical_centered_justified(|ui| {
-                    if ui.button("Stop / Start").clicked() {
-                        self.running = !self.running;
-                    }
-                });
-                cols[2].vertical_centered_justified(|ui| {
-                    ui.add(egui::Slider::new(&mut self.delay, 0.0..=500.0).text("Delay ms"))
+                
+                ui.separator();
+                
+                // Status indicator on the right
+                ui.vertical_centered(|ui| {
+                    let status_text = if self.running { "Running" } else { "Paused" };
+                    let status_color = if self.running { 
+                        egui::Color32::from_rgb(0, 150, 0) 
+                    } else { 
+                        egui::Color32::from_rgb(150, 150, 150) 
+                    };
+                    ui.colored_label(status_color, status_text);
                 });
             });
         });
